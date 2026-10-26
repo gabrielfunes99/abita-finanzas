@@ -13,15 +13,15 @@ App de finanzas internas de Abita.ai (SaaS de WhatsApp + IA, El Salvador). La us
 
 ```
 src/ui.html                 Fuente única de la interfaz (HTML + CSS + JS, sin framework)
-src/adapters/pwa.js         call() vía fetch a la API de Apps Script + "Iniciar sesión con Google" -> PWA
+src/adapters/pwa.js         call() vía fetch a la API de Apps Script + login por correo permitido -> PWA
 src/adapters/gas.js         call() vía google.script.run  -> diálogo dentro del Sheet
 src/adapters/cowork.js      call() vía window.cowork.callMcpTool (conector Google Sheets) -> artifact de Claude Cowork
-src/pwa/                    head.html (metas, manifest, GIS, estilos del login), config.js, manifest, sw.js, icons/
+src/pwa/                    head.html (metas, manifest, estilos del login), config.js, manifest, sw.js, icons/
 tools/icons.py              Regenera src/pwa/icons/ desde la "A" del logo (Pillow)
 build.py                    Inyecta adaptador + head en ui.html y genera las tres salidas
 apps-script/Code.gs         Backend Apps Script: doGet, doPost (API), getData, saveRow, deleteRow, saveConfig
 apps-script/Index.html      GENERADO por build.py (no editar a mano)
-apps-script/appsscript.json Manifest (web app: ejecutar como yo, acceso anónimo; la API valida el token)
+apps-script/appsscript.json Manifest (web app: ejecutar como yo, acceso anónimo; la API valida la sesión)
 docs/                       GENERADO por build.py: la PWA que publica GitHub Pages
 dist/cowork-dashboard.html  GENERADO por build.py (artifact "abita-finanzas" en Cowork)
 tests/test_dash.js          Prueba con Puppeteer y un Sheet simulado que replica las fórmulas
@@ -84,21 +84,20 @@ npm test               # prueba con Sheet simulado; capturas en tests/out/
 
 ## PWA (GitHub Pages + API de Apps Script)
 
-La app que usan Gabriel y Daniel es la PWA en `docs/`, publicada con GitHub Pages (rama main, carpeta `/docs`). Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
+La app que usan Gabriel y Daniel es la PWA en `docs/`, publicada con GitHub Pages: https://gabrielfunes99.github.io/abita-finanzas/ (repo `gabrielfunes99/abita-finanzas`, rama main, carpeta `/docs`). Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
 
-- La PWA hace `POST` (Content-Type `text/plain`, para evitar el preflight CORS) a la URL `/exec` de Apps Script con `{ fn, args, idToken }`.
-- `doPost` verifica el ID token de Google con `oauth2.googleapis.com/tokeninfo` (aud = `OAUTH_CLIENT_ID`, email verificado y dentro de `ALLOWED_EMAILS`) y cachea el resultado mientras el token sea válido.
+- La PWA hace `POST` (Content-Type `text/plain`, para evitar el preflight CORS) a la URL `/exec` de Apps Script con `{ fn, args, token }`.
+- **Login solo con correo:** `login(email)` abre una sesión de 90 días si el correo está en `emails_permitidos`. La sesión se guarda en Propiedades del script (`ses_<hash>`) y en el `localStorage` del teléfono; `logout` la borra. No se verifica que la persona sea dueña del correo (decisión de Gabriel): quien conozca un correo permitido puede entrar.
+- **Quién entra:** fila `emails_permitidos` de la pestaña Config (correos separados por coma). Está en el Sheet y no en el código porque el repo es público. Sacar un correo de ahí corta su acceso en la siguiente llamada.
 - La app web corre **como el dueño con acceso anónimo**. Por eso `doGet` devuelve solo texto (ContentService): **nunca debe devolver HtmlService**, porque una página así expone `google.script.run` sin login.
-- Propiedades del script (Apps Script → Configuración del proyecto → Propiedades del script): `OAUTH_CLIENT_ID`, `ALLOWED_EMAILS` (separados por coma), `PWA_URL` (opcional, solo para el texto de `doGet`).
-- `src/pwa/config.js` lleva `clientId` y `apiUrl`. No son secretos.
+- `src/pwa/config.js` lleva solo `apiUrl` (no es secreta).
 - El service worker (`sw.js`) guarda la interfaz para que abra sin red; los datos siempre se piden en vivo. `build.py` le pone un hash de versión en cada build.
 
 ### Puesta en marcha (una sola vez)
 
-1. **OAuth client:** Google Cloud Console → APIs y servicios → Pantalla de consentimiento (Externa; en modo Prueba agregar a Gabriel y Daniel como usuarios de prueba) → Credenciales → Crear ID de cliente OAuth → Aplicación web. Orígenes de JavaScript autorizados: `https://<usuario>.github.io` (y `http://localhost:8765` para probar local).
-2. **Apps Script:** cargar las propiedades del script de arriba, `npm run push`, y luego Implementar → Gestionar implementaciones → editar → Nueva versión. Al autorizar va a pedir el permiso nuevo de "conectarse a un servicio externo" (UrlFetchApp).
-3. Pegar el Client ID y la URL `/exec` en `src/pwa/config.js` y correr `python build.py`.
-4. Subir el repo a GitHub y activar Pages: Settings → Pages → Deploy from a branch → `main` / `/docs`.
+1. Agregar al final de Config la fila `emails_permitidos` con los correos.
+2. Apps Script: `npm run push`, luego Implementar → Gestionar implementaciones → editar → Nueva versión (o Nueva implementación → App web si no hay ninguna). 
+3. Pegar la URL `/exec` en `src/pwa/config.js`, correr `python build.py`, commit y push.
 
 ### Publicar en Apps Script con clasp
 
@@ -107,11 +106,10 @@ La app que usan Gabriel y Daniel es la PWA en `docs/`, publicada con GitHub Page
 3. `npm run push` (build + clasp push).
 4. En el editor de Apps Script: Implementar → Gestionar implementaciones → editar → Nueva versión. La URL de la app se mantiene.
 
-Para dar acceso a alguien: agregar su correo a `ALLOWED_EMAILS` (y como usuario de prueba en la pantalla de consentimiento si sigue en modo Prueba) y mandarle la URL de GitHub Pages. No hace falta compartirle el Sheet.
+Para dar acceso a alguien: agregar su correo a `emails_permitidos` en Config y mandarle la URL de GitHub Pages. No hace falta compartirle el Sheet.
 
 ## Pendientes / ideas
 
-- Daniel entra por la PWA: falta agregar su correo a `ALLOWED_EMAILS`.
 - Vista de solo lectura sin conexión (guardar el último getData en el dispositivo).
 - Proyección de flujo de caja y meta de punto de equilibrio.
 - Importar automáticamente los mensajes del mes de clientes "Por mensaje" desde el Dashboard de Abita.

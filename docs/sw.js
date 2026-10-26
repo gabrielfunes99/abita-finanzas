@@ -1,5 +1,5 @@
 /* Service worker: la app abre sin red (los datos siempre se piden en vivo a Apps Script). */
-var V = 'abita-cc284dacbe';
+var V = 'abita-1c5dc8271d';
 var SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 var CDN = /^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
 
