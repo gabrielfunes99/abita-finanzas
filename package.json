@@ -1,0 +1,14 @@
+{
+  "name": "abita-finanzas",
+  "private": true,
+  "scripts": {
+    "build": "python build.py",
+    "test": "node tests/test_dash.js",
+    "push": "python build.py && cd apps-script && clasp push"
+  },
+  "devDependencies": {
+    "chart.js": "4.4.1",
+    "puppeteer": "^23.0.0",
+    "@google/clasp": "^2.4.2"
+  }
+}
