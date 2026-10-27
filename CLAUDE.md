@@ -65,7 +65,7 @@ Las fórmulas de Ingresos referencian `Config!B8` a `B11` por posición. **No re
 - **Participación del socio comercial:** 4% al llegar a 20 clientes activos y 10% a los 50 (tope), con cliff de 12 meses. Cliente activo = Estado Activo, vendido por el equipo comercial y con 3 o más mensualidades pagadas.
 - **Gastos:** solo cuenta lo que está en la pestaña Gastos (lo efectivamente pagado). En Gastos fijos, el botón «Pagado» abre un gasto precargado (concepto, categoría, monto, Notas "Gasto fijo") y la vista muestra qué falta pagar en el mes. "Fijos" en el Resumen = pagos con Notas que empiezan con "Gasto fijo". Cambiar el monto o desactivar un gasto fijo no altera meses pasados.
 - **Utilidad** = ingresos − comisiones − gastos pagados (fijos + variables). Se reparte 40% reinversión, 20% reserva, 20% Gabriel y 20% Daniel, editable en Config.
-- **Plan "Por mensaje"** (ej. Hera): paga a fin de mes los mensajes enviados × `precio_por_mensaje`. Se registra como Tipo "Mensualidad". La app muestra un campo "Mensajes enviados" que calcula el monto y anota "N mensajes × $0.15" en Notas. En el ingreso recurrente cuenta con su último pago.
+- **Plan "Por mensaje"** (ej. Hera): paga a fin de mes los mensajes enviados × `precio_por_mensaje`. Se registra como Tipo "Mensualidad". La app muestra un campo "Mensajes enviados" que calcula el monto y anota "N mensajes × $0.15" en Notas. No cuenta como ingreso recurrente (no es suscripción): la tarjeta lo muestra aparte como "+ $X por uso", con su último pago.
 - **Mes #:** cuenta las mensualidades de ese cliente hasta esa fecha, inclusive.
 
 ## Diseño

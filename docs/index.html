@@ -387,10 +387,12 @@ function fijosEsperados(m){return rows('gastosFijos').filter(function(r){return 
 function saldo(){var last={};rows('cuenta').forEach(function(r){var c=r.v[1]||'Cuenta';if(!last[c]||r.v[0]>=last[c].f)last[c]={f:r.v[0],s:num(r.v[2])}});
   var tot=0,f='';Object.keys(last).forEach(function(c){tot+=last[c].s;if(last[c].f>f)f=last[c].f});return{total:tot,fecha:f,has:Object.keys(last).length>0}}
 function lastBill(c){var l=null;rows('ingresos').map(I).forEach(function(x){if(x.cliente===c&&x.tipo==='Mensualidad'&&(!l||x.fecha>=l.fecha))l=x});return l?l.monto:0}
-function clientesInfo(){var cl=rows('clientes'),act=cl.filter(function(r){return r.v[3]==='Activo'});var mrr=act.reduce(function(a,r){return a+(r.v[1]==='Por mensaje'?lastBill(r.v[0]):num(r.v[6]))},0);
+// Recurrente = suscripciones activas (mensualidad fija). Los planes "Por mensaje" van aparte como ingreso por uso (su último pago).
+function clientesInfo(){var cl=rows('clientes'),act=cl.filter(function(r){return r.v[3]==='Activo'}),porUso=function(r){return r.v[1]==='Por mensaje'};
+  var mrr=act.filter(function(r){return !porUso(r)}).reduce(function(a,r){return a+num(r.v[6])},0),uso=act.filter(porUso).reduce(function(a,r){return a+lastBill(r.v[0])},0),nUso=act.filter(porUso).length;
   var pagos={};rows('ingresos').map(I).forEach(function(x){if(x.tipo==='Mensualidad')pagos[x.cliente]=Math.max(pagos[x.cliente]||0,num(x.mes))});
   var calif=act.filter(function(r){return(r.v[5]==='Socio comercial'||r.v[5]==='Vendedor')&&(pagos[r.v[0]]||0)>=3}).length;
-  return{total:cl.length,activos:act.length,prueba:cl.filter(function(r){return r.v[3]==='Prueba'}).length,mrr:mrr,calif:calif}}
+  return{total:cl.length,activos:act.length,prueba:cl.filter(function(r){return r.v[3]==='Prueba'}).length,mrr:mrr,uso:uso,nUso:nUso,calif:calif}}
 function distribucionReg(m){var o={};rows('distribucion').forEach(function(r){if(ymOf(r.v[1])===m)o[r.v[2]]=(o[r.v[2]]||0)+num(r.v[3])});return o}
 function firstYM(){var ms=[];rows('ingresos').forEach(function(r){ms.push(ymOf(r.v[0]))});rows('gastos').forEach(function(r){ms.push(ymOf(r.v[0]))});ms=ms.filter(Boolean);var now=ym(new Date());
   return ms.length?ms.reduce(function(a,b){return a<b?a:b}):now}
@@ -451,7 +453,7 @@ function g(l,v,s,cls){return '<div class="gcard '+(cls||'')+'"><div class="l">'+
 function renderResumen(){
   var M=period(),P=month(addM(SEL,-1)),S=saldo(),C=clientesInfo(),n=M.months.length||1,mes=PER==='mes';
   var fijosMes=fijosEsperados(mes?SEL:ym(new Date()));
-  var avgFee=C.activos?C.mrr/C.activos:(num(CFG.precio_starter)||50),cubrir=avgFee>0?Math.ceil(fijosMes/avgFee):0;
+  var avgFee=C.activos?(C.mrr+C.uso)/C.activos:(num(CFG.precio_starter)||50),cubrir=avgFee>0?Math.ceil(fijosMes/avgFee):0;
   var delta=mes&&P.ingresos?(M.ingresos-P.ingresos)/P.ingresos:NaN,gana=M.utilidad>=0,vacio=M.ingresos===0&&M.gastos===0;
   var title=vacio?'Todavía no hay movimientos '+(mes?'este mes':(PER==='anio'?'en '+SEL.slice(0,4):''))+'<span class="dot">.</span>':
     (mes?(gana?'Abita está ganando ':'Abita está perdiendo '):((PER==='anio'?'En '+SEL.slice(0,4)+' ':'Desde el inicio ')+'Abita '+(gana?'ganó ':'perdió ')))+$m(Math.abs(M.utilidad))+'<span class="dot">.</span>';
@@ -464,7 +466,7 @@ function renderResumen(){
     g('Comisiones',$m(M.comisiones),'Vendedores '+$m(M.comVend)+' · Socio '+$m(M.comOv))+
     g('Utilidad',$m(M.utilidad),'Margen <span class="'+(M.utilidad>=0?'up':'down')+'">'+pct(M.margen)+'</span>','hot')+
     g('Saldo en cuenta',S.has?$m(S.total):'—',S.has?'Al '+S.fecha:'Registralo en Cuenta')+
-    g('Ingreso recurrente',$m(C.mrr),'Mensualidades activas al mes')+
+    g('Ingreso recurrente',$m(C.mrr),'Suscripciones activas al mes'+(C.nUso?' · + '+$m(C.uso)+' por uso ('+C.nUso+' cliente'+(C.nUso===1?'':'s')+' por mensaje, último pago)':''))+
     g('Clientes activos',C.activos,C.prueba+' en prueba · '+C.total+' en total')+
     g('Para Gabriel y Daniel',$m(M.repartible*gd),'Su parte de la utilidad ('+pct(gd)+')')+'</div>');
   var v=document.getElementById('view');
