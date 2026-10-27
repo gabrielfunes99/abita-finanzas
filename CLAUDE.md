@@ -82,6 +82,8 @@ Sigue el estilo del landing abitaai.com:
 
 En el celular (≤700px): navegación fija abajo (Resumen, Ingresos, Gastos, Clientes, Más) y hoja "Más" con el resto; las pestañas del hero se ocultan. Las tablas con clase `rt` se ven como tarjetas (`labelTables` pone el nombre de la columna en cada celda), "+ Agregar" flota y los formularios suben desde abajo.
 
+**Período** (`PER`, se recuerda en `localStorage`): Mes (`SEL`), Año (el de `SEL`) o Todo. `period()` suma `month(m)` de cada mes de `perMonths()`, que arranca en el primer movimiento (`firstYM`) y llega hasta el mes actual, así los gastos fijos no cuentan meses que no pasaron. Resumen, Comisiones y las tablas con fecha usan el período; "Registrar distribución" solo aparece con Mes.
+
 Configuración se edita en un borrador (`DRAFT`) y se guarda todo junto desde la barra flotante. Secciones: Precios (una fila por plan de `lista_planes`, claves `precio_<slug>` / `instalacion_<slug>`), Reparto (barra que avisa si no suma 100%), Comisiones, Participación, Acceso (`emails_permitidos` como etiquetas) y Listas (etiquetas; las de `LOCKED` tienen candado y no se pueden quitar). Los porcentajes se guardan como decimal y se muestran como %.
 
 ## Desarrollo
