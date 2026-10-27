@@ -96,9 +96,24 @@ function openDashboard() {
 }
 
 var SHEET_ID = '1ASqsCrFTzyE49MrugAbWKQgEcgF2MsMQ3u7yj0nFC70';
+var SS_ = null;
 function ss_() {
-  // Funciona tanto si el script está dentro del Sheet como si se creó aparte en script.google.com
-  return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID);
+  // Funciona tanto si el script está dentro del Sheet como si se creó aparte en script.google.com.
+  // La propiedad SHEET_ID (la deja migrarSheet) tiene prioridad sobre la constante.
+  return SS_ = SS_ || SpreadsheetApp.getActiveSpreadsheet() ||
+    SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('SHEET_ID') || SHEET_ID);
+}
+
+/**
+ * Ejecutar UNA vez desde el editor: copia el Sheet de SHEET_ID a la cuenta dueña del script
+ * (con fórmulas y pestañas) y desde ahí la app usa la copia. Mirá el link en el registro.
+ */
+function migrarSheet() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('SHEET_ID');
+  if (id) { Logger.log('Ya está migrado: https://docs.google.com/spreadsheets/d/' + id + '/edit'); return; }
+  var copia = SpreadsheetApp.openById(SHEET_ID).copy('Abita · Finanzas (base de datos)');
+  props.setProperty('SHEET_ID', copia.getId());
+  Logger.log('Sheet nuevo: ' + copia.getUrl());
 }
 function tz_() { return ss_().getSpreadsheetTimeZone(); }
 
