@@ -70,22 +70,18 @@ Las fórmulas de Ingresos referencian `Config!B8` a `B11` por posición. **No re
 
 ## Diseño
 
-Sigue el estilo del landing abitaai.com:
+App oscura con la marca de Abita: fondo `#0A0A0A`, texto crema `#EBE4D6`/`#F4EFE7`, naranja `#FF4D00` solo para lo importante (activo, utilidad, acciones), Plus Jakarta Sans. Tokens en `:root` de `src/ui.html` (`--bg`, `--ink`, `--mut`, `--g`, `--line`, `--surf`…).
 
-- Hero negro con radial naranja y la "A" del logo de fondo al 7%.
-- Tarjetas de vidrio: `rgba(255,255,255,.06)`, `blur(24px) saturate(1.9)`, radio 22.
-- Secciones crema `#EBE4D6` con tarjetas blancas.
-- Kicker en mayúsculas `#B33500`.
-- Botón primario con gradiente `#FF6220 → #FF4D00 → #F04400` y glow naranja.
-- Pestañas tipo píldora.
-- Tipografía Plus Jakarta Sans (titulares en 800 con tracking negativo y punto naranja final).
-- Colores de marca: `#FF4D00`, `#000`, `#6F6F6F`, `#EBE4D6`, `#FFF`.
+- **Estructura:** barra lateral fija en compu (`#side`, agrupada en General / Movimientos / Negocio + Configuración abajo); barra superior con mes y acciones. En ≤1000px la barra lateral se oculta y aparece la navegación de abajo (`#bnav`) con la hoja "Más".
+- **Encabezado de página:** `setHero(eyebrow, título, texto, extra)` arma título + selector de período + métricas.
+- **Métricas:** `g(label, valor, sub, clase, {n, f, d, sp})` → tarjeta con conteo animado (`data-n`), variación (`dlt`) y mini-gráfica (`spark`).
+- **Resumen:** utilidad grande con variación contra el período anterior (`prevPeriod`), 4 métricas con tendencia, gráfico principal (barras + línea con degradado), "Por pagar" (gastos fijos pendientes con botón Pagado → `pagarFijo`), caja y cartera, dona de gastos con total al centro, reparto y estado de resultados. Grilla de 12 columnas (`.dash`, `.panel`, `.w8`).
+- **Movimiento:** entrada escalonada (`enterFx`, solo al cambiar vista/período/mes), números que cuentan (`animateNums`), barra de carga fina arriba (`busy`), modales y avisos con transición. Todo se apaga con `prefers-reduced-motion`.
+- En el celular las tablas de `renderTable` se ven como lista (`mlistHTML`).
 
-En el celular (≤700px): navegación fija abajo (Resumen, Ingresos, Gastos, Clientes, Más) y hoja "Más" con el resto; las pestañas del hero se ocultan. Las tablas con clase `rt` se ven como tarjetas (`labelTables` pone el nombre de la columna en cada celda), "+ Agregar" flota y los formularios suben desde abajo.
+En el Resumen con Mes, la utilidad avisa cuánto falta de gastos fijos sin marcar como pagados (`fijosPendientes`, por concepto, igual que la vista de Gastos fijos).
 
 **Período** (`PER`, se recuerda en `localStorage`): Mes (`SEL`), Año (el de `SEL`) o Todo. `period()` suma `month(m)` de cada mes de `perMonths()`, que arranca en el primer movimiento (`firstYM`) y llega hasta el mes actual, así los gastos fijos no cuentan meses que no pasaron. Resumen, Comisiones y las tablas con fecha usan el período; "Registrar distribución" solo aparece con Mes.
-
-**Estilo plano** (pedido de Gabriel: "menos cajas"): las clases `.card` y `.gcard` no tienen fondo ni sombra; la jerarquía es tipografía + líneas finas. Las métricas del hero son texto (Utilidad en naranja; las secundarias con clase `mini`), las pestañas son subrayadas y Configuración usa filas de ajustes (título a la izquierda, campos a la derecha). En el celular, las tablas de `renderTable` se muestran como lista (`mlistHTML`): título, monto y detalle en gris.
 
 En el Resumen con Mes, Gastos y Utilidad avisan cuánto falta de gastos fijos sin marcar como pagados (`fijosPendientes`, por concepto, igual que la vista de Gastos fijos).
 
