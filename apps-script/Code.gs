@@ -18,7 +18,7 @@ var TABLES = {
  * IMPORTANTE: doGet nunca debe devolver HtmlService. Una página HtmlService servida acá dejaría
  * llamar getData/saveRow por google.script.run sin login. Todo acceso pasa por doPost + token.
  */
-var PWA_URL = 'https://abita-finanzas.pages.dev/';
+var PWA_URL = 'https://abita-finanzas.gabrielfunes99.workers.dev/';
 // Firebase (Configuración del proyecto > General > Tus apps). No son secretos.
 var FIREBASE_API_KEY = 'PEGAR_AQUI';
 var FIREBASE_PROJECT_ID = 'PEGAR_AQUI';

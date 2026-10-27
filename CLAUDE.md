@@ -85,7 +85,7 @@ npm test               # prueba con Sheet simulado; capturas en tests/out/
 
 ## PWA (Cloudflare + Firebase Auth + API de Apps Script)
 
-La app que usan Gabriel y Daniel es la PWA en `docs/`. Cloudflare la despliega solo con cada push a `main` del repo `gabrielfunes99/abita-finanzas` (`wrangler.jsonc` apunta a `docs/`). GitHub Pages también la sirve en https://gabrielfunes99.github.io/abita-finanzas/. Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
+La app que usan Gabriel y Daniel es la PWA en `docs/`. Cloudflare (Worker `abita-finanzas`, https://abita-finanzas.gabrielfunes99.workers.dev/) la despliega solo con cada push a `main` del repo `gabrielfunes99/abita-finanzas` (`wrangler.jsonc` apunta a `docs/`). GitHub Pages también la sirve en https://gabrielfunes99.github.io/abita-finanzas/. Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
 
 - **Login:** Firebase Auth con Google (`signInWithPopup`). Firebase guarda la sesión en el teléfono y renueva el token solo.
 - La PWA hace `POST` (Content-Type `text/plain`, para evitar el preflight CORS) a la URL `/exec` de Apps Script con `{ fn, args, token }`, donde `token` es el ID token de Firebase.
