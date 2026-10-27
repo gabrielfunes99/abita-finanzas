@@ -132,7 +132,9 @@ label.tg{display:flex;gap:8px;align-items:center;color:var(--g);font-weight:600;
 .total{text-align:right}.total .l{font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--g);text-transform:uppercase}.total .v{font-size:28px;font-weight:800;letter-spacing:-.03em}
 .note{font-size:13px;color:var(--g);margin-top:10px}
 .cfg-row{display:grid;grid-template-columns:240px 150px 1fr;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #F1ECE2}
-.cfg-row input{padding:9px 12px;border-radius:10px;border:0;font:inherit;background:var(--cream2);box-shadow:inset 0 0 0 1px var(--line);width:100%}
+.cfg-list{display:grid;grid-template-columns:240px 1fr;gap:6px 14px;align-items:center;padding:12px 0;border-bottom:1px solid #F1ECE2}
+.cfg-list .muted{grid-column:2;font-size:13px}
+.cfg-row input,.cfg-list input{padding:9px 12px;border-radius:10px;border:0;font:inherit;background:var(--cream2);box-shadow:inset 0 0 0 1px var(--line);width:100%}
 .statement td{padding:11px 4px}
 
 /* modal (vidrio oscuro) */
@@ -154,7 +156,7 @@ label.tg{display:flex;gap:8px;align-items:center;color:var(--g);font-weight:600;
 .loading.off{display:none}
 .spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--o);animation:sp 0.8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 
-@media(max-width:1000px){.glass-grid{grid-template-columns:repeat(2,1fr)}.two,.half{grid-template-columns:1fr}h1{font-size:36px}.cfg-row{grid-template-columns:1fr}}
+@media(max-width:1000px){.glass-grid{grid-template-columns:repeat(2,1fr)}.two,.half{grid-template-columns:1fr}h1{font-size:36px}.cfg-row,.cfg-list{grid-template-columns:1fr}.cfg-list .muted{grid-column:1}}
 @media(max-width:560px){.top{padding:calc(12px + env(safe-area-inset-top)) 16px 12px;flex-wrap:wrap}.hero,.cream{padding-left:16px;padding-right:16px}.gcard .v{font-size:24px}.dist-row{grid-template-columns:90px 1fr 80px}.dist-row>div:last-child{display:none}}
 </style>
 </head>
@@ -373,23 +375,35 @@ function renderComisiones(){
 }
 
 /* ============ Tablas editables ============ */
-var CATS=['Créditos de IA','Infraestructura','Software','Marketing','Legal y contable','Comisiones bancarias','Viáticos','Otro'];
+/* Listas de opciones: se editan en Configuración (filas lista_* de Config, separadas por coma). */
+var LISTS=[
+  ['lista_categorias','Categorías de gastos',['Créditos de IA','Infraestructura','Software','Marketing','Legal y contable','Comisiones bancarias','Viáticos','Otro'],'Para gastos fijos y variables.'],
+  ['lista_tipos_ingreso','Tipos de ingreso',['Mensualidad','Instalación','Otro'],'"Mensualidad" e "Instalación" calculan comisiones: no las renombres.'],
+  ['lista_planes','Planes',['Lite','Starter','Growth','Por mensaje','Personalizado'],'Cada plan toma su precio de precio_<plan> e instalacion_<plan>. "Por mensaje" cobra por mensaje.'],
+  ['lista_estados','Estados de cliente',['Prueba','Activo','Pausado','Cancelado'],'"Activo" y "Prueba" se usan en los cálculos: no los renombres.'],
+  ['lista_roles','Roles del vendedor',['Fundador','Socio comercial','Vendedor'],'Definen las comisiones: no los renombres.'],
+  ['lista_destinos','Destinos de la distribución',['Reinversión','Reserva','Gabriel','Daniel','Comisiones'],'Reinversión, Reserva, Gabriel y Daniel se usan en el reparto.']];
+function opts(k){var d=LISTS.filter(function(x){return x[0]===k})[0],v=CFG[k];
+  var a=(v!=null&&String(v).trim()!=='')?String(v).split(',').map(function(x){return x.trim()}).filter(Boolean):d[2];return a}
+function L(k){var f=function(){return opts(k)};f.cfg=1;return f}
 function clientNames(){return rows('clientes').map(function(r){return r.v[0]})}
 function sellerNames(){var s={Gabriel:1,Daniel:1};rows('clientes').forEach(function(r){if(r.v[4])s[r.v[4]]=1});if(CFG.socio_comercial_nombre)s[CFG.socio_comercial_nombre]=1;return Object.keys(s)}
+function conceptNames(){var s={};rows('gastos').forEach(function(r){if(r.v[1])s[String(r.v[1]).trim()]=1});rows('gastosFijos').forEach(function(r){if(r.v[0])s[String(r.v[0]).trim()]=1});
+  return Object.keys(s).sort(function(a,b){return a.localeCompare(b,'es')})}
 function accountNames(){var s={};rows('cuenta').forEach(function(r){if(r.v[1])s[r.v[1]]=1});return Object.keys(s)}
 var DEF={
   ingresos:{eb:'Lo que entra',title:'Ingresos',sub:'Cada pago que entra: mensualidades, instalaciones u otros. Las comisiones se calculan solas.',dateIdx:0,amountIdx:3,
-    fields:[{l:'Fecha',t:'date'},{l:'Cliente',t:'list',src:clientNames},{l:'Tipo',t:'select',o:['Mensualidad','Instalación','Otro']},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],show:[0,1,2,3,6,8,9],extra:{5:'Mes #',6:'Vendido por',7:'Rol',8:'Comisión',9:'Override'},money:[3,8,9]},
+    fields:[{l:'Fecha',t:'date'},{l:'Cliente',t:'choice',src:clientNames},{l:'Tipo',t:'choice',src:L('lista_tipos_ingreso')},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],show:[0,1,2,3,6,8,9],extra:{5:'Mes #',6:'Vendido por',7:'Rol',8:'Comisión',9:'Override'},money:[3,8,9]},
   gastos:{eb:'Lo que sale',title:'Gastos variables',sub:'Créditos de IA, compras puntuales y todo lo que no se paga cada mes.',dateIdx:0,amountIdx:3,
-    fields:[{l:'Fecha',t:'date'},{l:'Concepto',t:'text'},{l:'Categoría',t:'list',src:function(){return CATS}},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],money:[3]},
+    fields:[{l:'Fecha',t:'date'},{l:'Concepto',t:'choice',src:conceptNames},{l:'Categoría',t:'choice',src:L('lista_categorias')},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],money:[3]},
   gastosFijos:{eb:'Todos los meses',title:'Gastos fijos',sub:'Se cuentan solos en cada mes mientras estén activos.',amountIdx:2,
-    fields:[{l:'Concepto',t:'text'},{l:'Categoría',t:'list',src:function(){return CATS}},{l:'Monto mensual (USD)',t:'number'},{l:'Activo',t:'select',o:['Sí','No']},{l:'Desde',t:'date'},{l:'Hasta (opcional)',t:'date'},{l:'Notas',t:'text'}],money:[2]},
+    fields:[{l:'Concepto',t:'choice',src:conceptNames},{l:'Categoría',t:'choice',src:L('lista_categorias')},{l:'Monto mensual (USD)',t:'number'},{l:'Activo',t:'select',o:['Sí','No']},{l:'Desde',t:'date'},{l:'Hasta (opcional)',t:'date'},{l:'Notas',t:'text'}],money:[2]},
   clientes:{eb:'Cartera',title:'Clientes',sub:'Plan, estado y quién lo vendió. De esto dependen las comisiones.',
-    fields:[{l:'Cliente',t:'text'},{l:'Plan',t:'select',o:['Lite','Starter','Growth','Por mensaje','Personalizado']},{l:'Fecha inicio',t:'date'},{l:'Estado',t:'select',o:['Prueba','Activo','Pausado','Cancelado']},{l:'Vendido por',t:'list',src:sellerNames},{l:'Rol del vendedor',t:'select',o:['Fundador','Socio comercial','Vendedor']},{l:'Mensualidad (USD) · vacío si paga por mensaje',t:'number'},{l:'Notas',t:'text'}],money:[6]},
+    fields:[{l:'Cliente',t:'text'},{l:'Plan',t:'choice',src:L('lista_planes')},{l:'Fecha inicio',t:'date'},{l:'Estado',t:'choice',src:L('lista_estados')},{l:'Vendido por',t:'choice',src:sellerNames},{l:'Rol del vendedor',t:'choice',src:L('lista_roles')},{l:'Mensualidad (USD) · vacío si paga por mensaje',t:'number'},{l:'Notas',t:'text'}],money:[6]},
   cuenta:{eb:'Banco',title:'Saldo en cuenta',sub:'Anotá el saldo cada vez que revisen el banco. Se usa el último registro de cada cuenta.',dateIdx:0,
-    fields:[{l:'Fecha',t:'date'},{l:'Cuenta',t:'list',src:accountNames},{l:'Saldo (USD)',t:'number'},{l:'Notas',t:'text'}],money:[2]},
+    fields:[{l:'Fecha',t:'date'},{l:'Cuenta',t:'choice',src:accountNames},{l:'Saldo (USD)',t:'number'},{l:'Notas',t:'text'}],money:[2]},
   distribucion:{eb:'Reparto',title:'Distribución registrada',sub:'Lo que efectivamente se movió a reinversión, reserva, Gabriel, Daniel o comisiones.',dateIdx:0,amountIdx:3,monthIdx:1,
-    fields:[{l:'Fecha',t:'date'},{l:'Mes al que corresponde',t:'date'},{l:'Destino',t:'select',o:['Reinversión','Reserva','Gabriel','Daniel','Comisiones']},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],money:[3]}
+    fields:[{l:'Fecha',t:'date'},{l:'Mes al que corresponde',t:'date'},{l:'Destino',t:'choice',src:L('lista_destinos')},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],money:[3]}
 };
 var tableState={};
 function renderTable(key){
@@ -423,8 +437,8 @@ function renderTable(key){
 
 /* ============ Formulario ============ */
 function defaults(key){var t=today();
-  if(key==='ingresos')return[t,'','Mensualidad','',''];if(key==='gastos')return[t,'','Créditos de IA','',''];
-  if(key==='gastosFijos')return['','Infraestructura','','Sí',firstDay(SEL),'',''];
+  if(key==='ingresos')return[t,'','Mensualidad','',''];if(key==='gastos')return[t,'',opts('lista_categorias')[0],'',''];
+  if(key==='gastosFijos'){var c=opts('lista_categorias');return['',c.indexOf('Infraestructura')>=0?'Infraestructura':c[0],'','Sí',firstDay(SEL),'',''];}
   if(key==='clientes')return['','Starter',t,'Prueba','Gabriel','Fundador',num(CFG.precio_starter)||'',''];
   if(key==='cuenta'){var a=accountNames();return[t,a[0]||'Cuenta principal','',''];}
   if(key==='distribucion')return[t,firstDay(SEL),'Reinversión','',''];return[]}
@@ -434,11 +448,17 @@ function openForm(key,row){
   var h='<h3>'+(rec?'Editar':'Agregar')+' · '+def.title+'</h3><form id="frm">';
   def.fields.forEach(function(f,i){var val=vals[i]==null?'':vals[i];h+='<div class="field"><label>'+f.l+'</label>';
     if(f.t==='select')h+='<select name="f'+i+'">'+f.o.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>'}).join('')+'</select>';
+    else if(f.t==='choice'){var o=f.src().filter(function(x,j,a){return x!==''&&a.indexOf(x)===j});if(val!==''&&o.indexOf(String(val))<0)o.push(String(val));
+      h+='<select name="f'+i+'" data-choice="1"'+(f.src.cfg?' data-cfg="1"':'')+'>'+(val===''?'<option value="" selected>Elegí…</option>':'')+o.map(function(x){return '<option'+(x===String(val)?' selected':'')+'>'+esc(x)+'</option>'}).join('')+'<option value="__otra">Otra…</option></select>'}
     else if(f.t==='list'){h+='<input name="f'+i+'" list="dl'+i+'" value="'+esc(val)+'" autocomplete="off"><datalist id="dl'+i+'">'+f.src().map(function(o){return '<option value="'+esc(o)+'">'}).join('')+'</datalist>'}
     else h+='<input name="f'+i+'" type="'+(f.t==='number'?'number':f.t)+'" '+(f.t==='number'?'step="0.01"':'')+' value="'+esc(val)+'">';h+='</div>'});
   if(key==='ingresos')h+='<div class="field" id="msgBox" style="display:none"><label>Mensajes enviados en el mes</label><input id="msgs" type="number" min="0" step="1" placeholder="Ej. 461"></div><div class="note" id="hint"></div>';
   h+='<div class="actions">'+(rec?'<button type="button" class="btn danger sm left" id="del">Eliminar</button>':'')+'<button type="button" class="btn glass" id="cancel">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>';
   document.getElementById('modal').innerHTML=h;document.getElementById('mbg').classList.add('on');var F=document.getElementById('frm');
+  F.querySelectorAll('select[data-choice]').forEach(function(sel){var prev=sel.value;sel.addEventListener('change',function(){
+    if(sel.value!=='__otra'){prev=sel.value;return}var t=(prompt('Escribí la nueva opción.'+(sel.dataset.cfg?'\nPara que aparezca siempre, agregala en Configuración.':''))||'').trim();
+    if(!t){sel.value=prev;return}var op=Array.prototype.filter.call(sel.options,function(x){return x.value===t})[0];
+    if(!op){op=document.createElement('option');op.textContent=t;sel.insertBefore(op,sel.lastChild)}sel.value=t;prev=t})});
   if(key==='clientes'){F.f1.onchange=function(){if(F.f1.value==='Por mensaje'){F.f6.value='';return}var p=planPrice(F.f1.value);if(p)F.f6.value=p};
     F.f4.oninput=function(){var n=F.f4.value;if(n==='Gabriel'||n==='Daniel')F.f5.value='Fundador';else if(CFG.socio_comercial_nombre&&n===CFG.socio_comercial_nombre)F.f5.value='Socio comercial'}}
   if(key==='ingresos'){var fill=function(){var c=rows('clientes').filter(function(r){return r.v[0]===F.f1.value})[0],hint=document.getElementById('hint');
@@ -462,10 +482,14 @@ document.getElementById('mbg').addEventListener('click',function(e){if(e.target.
 /* ============ Configuración ============ */
 function renderConfig(){
   setHero('Ajustes','Configuración<span class="dot">.</span>','Precios, comisiones y reparto de la utilidad. Los porcentajes van como decimal: 0.4 es 40%.','');
-  var h='<div class="card">';D.configRows.forEach(function(c){h+='<div class="cfg-row"><b>'+esc(c.key)+'</b><input data-k="'+esc(c.key)+'" value="'+esc(c.value)+'"><span class="muted">'+esc(c.desc)+'</span></div>'});
+  var h='<div class="card">';D.configRows.filter(function(c){return String(c.key).indexOf('lista_')!==0}).forEach(function(c){h+='<div class="cfg-row"><b>'+esc(c.key)+'</b><input data-k="'+esc(c.key)+'" value="'+esc(c.value)+'"><span class="muted">'+esc(c.desc)+'</span></div>'});
+  h+='</div><div class="card" style="margin-top:16px"><div class="kicker">Opciones de los formularios</div><h2>Listas</h2><p class="sub" style="margin-bottom:6px">Separá las opciones con coma. El orden es el de los menús.</p>';
+  LISTS.forEach(function(l){h+='<div class="cfg-list"><b>'+esc(l[1])+'</b><input data-k="'+l[0]+'" data-list="1" value="'+esc(opts(l[0]).join(', '))+'"><span class="muted">'+esc(l[3])+'</span></div>'});
   h+='<div class="actions"><button class="btn" id="saveCfg">Guardar cambios</button></div></div>';var v=document.getElementById('view');v.innerHTML=h;
-  document.getElementById('saveCfg').onclick=function(){var ch={};v.querySelectorAll('input[data-k]').forEach(function(i){var k=i.dataset.k,val=i.value;if(String(CFG[k])!==val)ch[k]=(val!==''&&!isNaN(Number(val)))?Number(val):val});
-    if(!Object.keys(ch).length){toast('No hay cambios');return}busy(true);call('saveConfig',ch).then(function(d){setData(d);toast('Configuración guardada')}).catch(err).finally(function(){busy(false)})};
+  document.getElementById('saveCfg').onclick=function(){var ch={};v.querySelectorAll('input[data-k]').forEach(function(i){var k=i.dataset.k,val=i.value;
+      if(i.dataset.list){val=val.split(',').map(function(x){return x.trim()}).filter(Boolean).join(', ');if(val===opts(k).join(', '))return;if(!val){toast('Una lista no puede quedar vacía');ch=null;return}}
+      if(ch&&String(CFG[k])!==val)ch[k]=(val!==''&&!isNaN(Number(val)))?Number(val):val});
+    if(!ch)return;if(!Object.keys(ch).length){toast('No hay cambios');return}busy(true);call('saveConfig',ch).then(function(d){setData(d);toast('Configuración guardada')}).catch(err).finally(function(){busy(false)})};
 }
 
 /* ============ Carga ============ */

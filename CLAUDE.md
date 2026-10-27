@@ -50,6 +50,10 @@ tests/test_dash.js          Prueba con Puppeteer y un Sheet simulado que replica
 
 `precio_lite` 35, `precio_starter` 50, `precio_growth` 80, `instalacion_lite` 100, `instalacion_starter` 125, `instalacion_growth` 150, `pct_instalacion_vendedor` 0.6, `pct_override_instalacion` 0.05, `pct_override_mensual` 0.05, `meses_override` 12, `reparto_reinversion` 0.4, `reparto_reserva` 0.2, `reparto_gabriel` 0.2, `reparto_daniel` 0.2, `meta_tramo1_clientes` 20, `meta_tramo1_pct` 0.04, `meta_tramo2_clientes` 50, `meta_tramo2_pct` 0.10, `socio_comercial_nombre` (vacío), `precio_por_mensaje` 0.15.
 
+**Listas de opciones** (`lista_categorias`, `lista_tipos_ingreso`, `lista_planes`, `lista_estados`, `lista_roles`, `lista_destinos`): separadas por coma, se editan en Configuración de la app. Si la fila no existe se usan los valores por defecto de `LISTS` en `ui.html`, y `saveConfig` la agrega al final. Tipos, estados, roles y destinos tienen valores con lógica (Mensualidad, Instalación, Activo, Prueba, Fundador, Socio comercial, Vendedor, Reinversión, Reserva, Gabriel, Daniel): se pueden agregar opciones, pero no renombrar esas.
+
+Todos los campos de elección de los formularios son menús con "Otra…" para escribir un valor nuevo. Concepto (gastos y gastos fijos), Cliente, Vendido por y Cuenta toman sus opciones de lo ya cargado, para que no haya variantes del mismo nombre.
+
 Las fórmulas de Ingresos referencian `Config!B8` a `B11` por posición. **No reordenes las filas de Config.**
 
 ## Reglas de negocio (plan comercial acordado)
