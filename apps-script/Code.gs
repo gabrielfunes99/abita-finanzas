@@ -20,8 +20,8 @@ var TABLES = {
  */
 var PWA_URL = 'https://abita-finanzas.gabrielfunes99.workers.dev/';
 // Firebase (Configuración del proyecto > General > Tus apps). No son secretos.
-var FIREBASE_API_KEY = 'PEGAR_AQUI';
-var FIREBASE_PROJECT_ID = 'PEGAR_AQUI';
+var FIREBASE_API_KEY = 'AIzaSyDBX3pmei9qQkt-BdBNnRvrMe_QWhL9zqs';
+var FIREBASE_PROJECT_ID = 'abita-finanzas';
 
 function doGet() {
   return ContentService.createTextOutput('Abita · Finanzas: esta URL es la API. Abrí la app en ' + PWA_URL);

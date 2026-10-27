@@ -4,9 +4,9 @@ window.ABITA_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/PEGAR_AQUI/exec',
   // Firebase > Configuración del proyecto > General > Tus apps > App web > firebaseConfig
   firebase: {
-    apiKey: 'PEGAR_AQUI',
-    authDomain: 'PEGAR_AQUI.firebaseapp.com',
-    projectId: 'PEGAR_AQUI',
-    appId: 'PEGAR_AQUI'
+    apiKey: 'AIzaSyDBX3pmei9qQkt-BdBNnRvrMe_QWhL9zqs',
+    authDomain: 'abita-finanzas.firebaseapp.com',
+    projectId: 'abita-finanzas',
+    appId: '1:692658813592:web:7e6e52bb70c03c46ea2eed'
   }
 };
