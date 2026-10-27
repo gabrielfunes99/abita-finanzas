@@ -85,6 +85,8 @@ npm test               # prueba con Sheet simulado; capturas en tests/out/
 
 ## PWA (Cloudflare + Firebase Auth + API de Apps Script)
 
+**Dónde vive cada cosa:** el Sheet es de `g.funes@ogc.sv`. La API es un Apps Script **standalone** de `gabrielfunes99@gmail.com` ("Abita · Finanzas (API)", scriptId `1adfHLb5GSj_LcStlUdt_-KBv3UoKGkOTDjSrcacy_Bo2W7bmEw4Z67Wf`) que abre el Sheet por `SHEET_ID`, así que ese Gmail necesita ser Editor del Sheet. Firebase: proyecto `abita-finanzas` del mismo Gmail. Para publicar cambios del backend: `npm run push` y `npx.cmd clasp deploy -i <deploymentId>` para mantener la misma URL `/exec`.
+
 La app que usan Gabriel y Daniel es la PWA en `docs/`. Cloudflare (Worker `abita-finanzas`, https://abita-finanzas.gabrielfunes99.workers.dev/) la despliega solo con cada push a `main` del repo `gabrielfunes99/abita-finanzas` (`wrangler.jsonc` apunta a `docs/`). GitHub Pages también la sirve en https://gabrielfunes99.github.io/abita-finanzas/. Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
 
 - **Login:** Firebase Auth con Google (`signInWithPopup`). Firebase guarda la sesión en el teléfono y renueva el token solo.
