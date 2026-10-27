@@ -85,6 +85,10 @@ En el celular (≤700px): navegación fija abajo (Resumen, Ingresos, Gastos, Cli
 
 **Período** (`PER`, se recuerda en `localStorage`): Mes (`SEL`), Año (el de `SEL`) o Todo. `period()` suma `month(m)` de cada mes de `perMonths()`, que arranca en el primer movimiento (`firstYM`) y llega hasta el mes actual, así los gastos fijos no cuentan meses que no pasaron. Resumen, Comisiones y las tablas con fecha usan el período; "Registrar distribución" solo aparece con Mes.
 
+**Estilo plano** (pedido de Gabriel: "menos cajas"): las clases `.card` y `.gcard` no tienen fondo ni sombra; la jerarquía es tipografía + líneas finas. Las métricas del hero son texto (Utilidad en naranja; las secundarias con clase `mini`), las pestañas son subrayadas y Configuración usa filas de ajustes (título a la izquierda, campos a la derecha). En el celular, las tablas de `renderTable` se muestran como lista (`mlistHTML`): título, monto y detalle en gris.
+
+En el Resumen con Mes, Gastos y Utilidad avisan cuánto falta de gastos fijos sin marcar como pagados (`fijosPendientes`, por concepto, igual que la vista de Gastos fijos).
+
 Configuración se edita en un borrador (`DRAFT`) y se guarda todo junto desde la barra flotante. Secciones: Precios (una fila por plan de `lista_planes`, claves `precio_<slug>` / `instalacion_<slug>`), Reparto (barra que avisa si no suma 100%), Comisiones, Participación, Acceso (`emails_permitidos` como etiquetas) y Listas (etiquetas; las de `LOCKED` tienen candado y no se pueden quitar). Los porcentajes se guardan como decimal y se muestran como %.
 
 ## Desarrollo

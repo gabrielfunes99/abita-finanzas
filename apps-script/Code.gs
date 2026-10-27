@@ -215,7 +215,8 @@ function resumenGastos_(r) {
   return ['=SUMIFS(Gastos!$D:$D,' + mes + ',Gastos!$E:$E,"Gasto fijo*")', '=SUMIFS(Gastos!$D:$D,' + mes + ')-D' + r];
 }
 
-function tz_() { return ss_().getSpreadsheetTimeZone(); }
+var TZ_ = null;
+function tz_() { return TZ_ = TZ_ || ss_().getSpreadsheetTimeZone(); }  // se pide una vez por llamada, no por celda
 
 function fmtCell_(v) {
   if (v instanceof Date) return Utilities.formatDate(v, tz_(), 'yyyy-MM-dd');
