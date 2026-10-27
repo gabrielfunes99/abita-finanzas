@@ -80,6 +80,10 @@ Sigue el estilo del landing abitaai.com:
 - Tipografía Plus Jakarta Sans (titulares en 800 con tracking negativo y punto naranja final).
 - Colores de marca: `#FF4D00`, `#000`, `#6F6F6F`, `#EBE4D6`, `#FFF`.
 
+En el celular (≤700px): navegación fija abajo (Resumen, Ingresos, Gastos, Clientes, Más) y hoja "Más" con el resto; las pestañas del hero se ocultan. Las tablas con clase `rt` se ven como tarjetas (`labelTables` pone el nombre de la columna en cada celda), "+ Agregar" flota y los formularios suben desde abajo.
+
+Configuración se edita en un borrador (`DRAFT`) y se guarda todo junto desde la barra flotante. Secciones: Precios (una fila por plan de `lista_planes`, claves `precio_<slug>` / `instalacion_<slug>`), Reparto (barra que avisa si no suma 100%), Comisiones, Participación, Acceso (`emails_permitidos` como etiquetas) y Listas (etiquetas; las de `LOCKED` tienen candado y no se pueden quitar). Los porcentajes se guardan como decimal y se muestran como %.
+
 ## Desarrollo
 
 ```bash

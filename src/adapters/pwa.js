@@ -6,7 +6,7 @@ function api(fn,args,token){
     .then(function(r){if(!r.ok)throw new Error('La API respondió '+r.status);return r.json()})}
 function login(msg){return new Promise(function(res){waiting.push(res);document.getElementById('login').classList.add('on');
   document.getElementById('loginMsg').textContent=msg||'Entrá con tu cuenta de Google.'})}
-(function(){var top=document.querySelector('.top'),b=document.createElement('button');b.className='btn glass sm';b.id='logout';b.textContent='Salir';b.title='Cerrar sesión';
+(function(){var top=document.querySelector('.top'),b=document.createElement('button');b.className='btn glass sm ib';b.id='logout';b.title='Cerrar sesión';b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/></svg><span class="lbl">Salir</span>';
   b.onclick=function(){(AUTH?AUTH.signOut():Promise.resolve()).then(function(){location.reload()})};top.appendChild(b);
   var L=document.createElement('div');L.className='login';L.id='login';
   L.innerHTML='<div class="login-card"><svg class="logo" viewBox="0 0 722.1 121.6" aria-label="Abita AI"><use href="#abita-logo"/></svg><h1>Finanzas<span class="dot">.</span></h1><p id="loginMsg"></p>'+
