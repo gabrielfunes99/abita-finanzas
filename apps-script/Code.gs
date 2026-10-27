@@ -128,7 +128,7 @@ function crearSheet() {
   };
 
   // Resumen: 12 meses desde octubre 2026
-  var gf = "'Gastos fijos'", res = [];
+  var res = [];
   for (var k = 0; k < 12; k++) {
     var r = k + 2, m = '$A' + r;
     var mes = function (hoja, col) {
@@ -137,8 +137,7 @@ function crearSheet() {
     res.push([k === 0 ? '=DATE(2026,10,1)' : '=EDATE(A' + (r - 1) + ',1)',
       '=' + mes('Ingresos', 'D'),
       '=' + mes('Ingresos', 'I') + '+' + mes('Ingresos', 'J'),
-      '=SUMIFS(' + gf + '!$C:$C,' + gf + '!$D:$D,"Sí",' + gf + '!$E:$E,"<="&EOMONTH(' + m + ',0))-SUMIFS(' + gf + '!$C:$C,' + gf + '!$D:$D,"Sí",' + gf + '!$E:$E,"<="&EOMONTH(' + m + ',0),' + gf + '!$F:$F,"<"&' + m + ')',
-      '=' + mes('Gastos', 'D'),
+      resumenGastos_(r)[0], resumenGastos_(r)[1],
       '=D' + r + '+E' + r, '=B' + r + '-C' + r + '-F' + r, '=IF(B' + r + '=0,"",G' + r + '/B' + r + ')',
       '=MAX(G' + r + ',0)*Config!$B$12', '=MAX(G' + r + ',0)*Config!$B$13', '=MAX(G' + r + ',0)*Config!$B$14', '=MAX(G' + r + ',0)*Config!$B$15']);
   }
@@ -199,6 +198,21 @@ function crearSheet() {
   ss.setActiveSheet(shR);
   props.setProperty('SHEET_ID', ss.getId());
   Logger.log('Sheet nuevo: ' + ss.getUrl());
+}
+
+/**
+ * Ejecutar UNA vez desde el editor si el Sheet se creó antes del botón «Pagado»: en la pestaña Resumen,
+ * "Gastos fijos" pasa a sumar los pagos de gastos fijos de la pestaña Gastos (Notas "Gasto fijo…")
+ * y "Gastos variables" el resto, igual que la app.
+ */
+function actualizarResumen() {
+  var sh = ss_().getSheetByName('Resumen'), n = sh.getLastRow();
+  for (var r = 2; r <= n; r++) sh.getRange(r, 4, 1, 2).setFormulas([resumenGastos_(r)]);
+  Logger.log('Resumen actualizado (' + (n - 1) + ' meses)');
+}
+function resumenGastos_(r) {
+  var m = '$A' + r, mes = 'Gastos!$A:$A,">="&' + m + ',Gastos!$A:$A,"<="&EOMONTH(' + m + ',0)';
+  return ['=SUMIFS(Gastos!$D:$D,' + mes + ',Gastos!$E:$E,"Gasto fijo*")', '=SUMIFS(Gastos!$D:$D,' + mes + ')-D' + r];
 }
 
 function tz_() { return ss_().getSpreadsheetTimeZone(); }

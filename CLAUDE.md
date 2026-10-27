@@ -39,8 +39,8 @@ tests/test_dash.js          Prueba con Puppeteer y un Sheet simulado que replica
 | --- | --- | --- |
 | Resumen (0) | Mes, Ingresos, Comisiones, Gastos fijos, Gastos variables, Gastos totales, Utilidad, Margen, Reinversión, Reserva, Gabriel, Daniel | Fórmulas SUMIFS por mes, filas oct 2026 a sep 2027 |
 | Ingresos (1) | A Fecha, B Cliente, C Tipo (Mensualidad / Instalación / Otro), D Monto, E Notas | F:J son ARRAYFORMULA en la fila 1: F Mes #, G Vendido por, H Rol, I Comisión vendedor, J Override socio. La app solo escribe A:E |
-| Gastos fijos (2) | Concepto, Categoría, Monto mensual, Activo (Sí/No), Desde, Hasta, Notas | Cuenta en cada mes con Activo=Sí, Desde ≤ fin de mes y Hasta vacío o ≥ inicio de mes |
-| Gastos (3) | Fecha, Concepto, Categoría, Monto, Notas | Gastos variables y extras (créditos de IA, etc.) |
+| Gastos fijos (2) | Concepto, Categoría, Monto mensual, Activo (Sí/No), Desde, Hasta, Notas | Lista de lo que se paga cada mes. **No suma sola**: se vigila con Activo=Sí, Desde ≤ mes y Hasta vacío o ≥ mes |
+| Gastos (3) | Fecha, Concepto, Categoría, Monto, Notas | **Todo lo pagado.** Los pagos de gastos fijos (botón «Pagado») llevan Notas = "Gasto fijo"; el resto son variables |
 | Clientes (4) | Cliente, Plan (Lite / Starter / Growth / Por mensaje / Personalizado), Fecha inicio, Estado (Prueba / Activo / Pausado / Cancelado), Vendido por, Rol del vendedor (Fundador / Socio comercial / Vendedor), Mensualidad, Notas | |
 | Cuenta (5) | Fecha, Cuenta, Saldo, Notas | El saldo actual es el último registro de cada cuenta |
 | Distribucion (6) | Fecha, Mes, Destino (Reinversión / Reserva / Gabriel / Daniel / Comisiones), Monto, Notas | Lo que efectivamente se repartió |
@@ -63,7 +63,8 @@ Las fórmulas de Ingresos referencian `Config!B8` a `B11` por posición. **No re
 - **Override mensual:** el socio comercial recibe 5% de cada mensualidad de los clientes de su equipo durante 12 meses.
 - **Fundadores (Gabriel, Daniel):** no generan comisiones.
 - **Participación del socio comercial:** 4% al llegar a 20 clientes activos y 10% a los 50 (tope), con cliff de 12 meses. Cliente activo = Estado Activo, vendido por el equipo comercial y con 3 o más mensualidades pagadas.
-- **Utilidad** = ingresos − comisiones − gastos fijos − gastos variables. Se reparte 40% reinversión, 20% reserva, 20% Gabriel y 20% Daniel, editable en Config.
+- **Gastos:** solo cuenta lo que está en la pestaña Gastos (lo efectivamente pagado). En Gastos fijos, el botón «Pagado» abre un gasto precargado (concepto, categoría, monto, Notas "Gasto fijo") y la vista muestra qué falta pagar en el mes. "Fijos" en el Resumen = pagos con Notas que empiezan con "Gasto fijo". Cambiar el monto o desactivar un gasto fijo no altera meses pasados.
+- **Utilidad** = ingresos − comisiones − gastos pagados (fijos + variables). Se reparte 40% reinversión, 20% reserva, 20% Gabriel y 20% Daniel, editable en Config.
 - **Plan "Por mensaje"** (ej. Hera): paga a fin de mes los mensajes enviados × `precio_por_mensaje`. Se registra como Tipo "Mensualidad". La app muestra un campo "Mensajes enviados" que calcula el monto y anota "N mensajes × $0.15" en Notas. En el ingreso recurrente cuenta con su último pago.
 - **Mes #:** cuenta las mensualidades de ese cliente hasta esa fecha, inclusive.
 

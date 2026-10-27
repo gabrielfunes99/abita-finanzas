@@ -126,6 +126,16 @@ label.tg{display:flex;gap:8px;align-items:center;color:var(--g);font-weight:600;
 .loading.off{display:none}
 .spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:var(--o);animation:sp 0.8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 
+/* ---------- gastos fijos del mes ---------- */
+.fx-item{display:flex;align-items:center;gap:14px;padding:14px 6px;border-bottom:1px solid #F1ECE2;cursor:pointer;border-radius:10px;transition:background .12s}
+.fx-item:hover{background:#FBF8F3}
+.fx-main{flex:1;min-width:0}.fx-main b{display:block;font-size:15.5px}.fx-main .muted{font-size:13px}
+.fx-amt{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fx-item.off{opacity:.55}
+.fx-item .chip.g{cursor:pointer}
+.fx-sec{margin:22px 0 4px;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--g)}
+@media(max-width:560px){.fx-item{flex-wrap:wrap;gap:6px 12px}.fx-item .fx-act{width:100%;display:flex;justify-content:flex-end}}
+
 /* ---------- selector de período ---------- */
 .hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .seg{display:inline-flex;padding:4px;border-radius:999px;background:rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.08)}
@@ -204,6 +214,7 @@ label.tg{display:flex;gap:8px;align-items:center;color:var(--g);font-weight:600;
     background:rgba(8,8,8,.92);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);border-top:1px solid rgba(255,255,255,.07)}
   .bnav button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border:0;background:none;color:var(--mut);font:inherit;font-size:11px;font-weight:600;cursor:pointer}
   .bnav svg{width:22px;height:22px}.bnav button.on{color:var(--o)}
+  .cream{padding-bottom:110px}
   .toolbar input[type=search]{min-width:0}
   #addBtn{position:fixed;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:44;border-radius:999px;padding:14px 20px}
   .modal-bg{align-items:flex-end;padding:0}
@@ -260,7 +271,7 @@ label.tg{display:flex;gap:8px;align-items:center;color:var(--g);font-weight:600;
   <button data-v="__more"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>Más</span></button>
 </nav>
 <div class="sheet-bg" id="moreBg"><div class="sheet"><div class="grab"></div>
-  <button data-v="gastosFijos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><div>Gastos fijos<small>Lo que se paga todos los meses</small></div></button>
+  <button data-v="gastosFijos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><div>Gastos fijos<small>Marcá cuáles ya pagaron este mes</small></div></button>
   <button data-v="comisiones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg><div>Comisiones<small>Lo que se le paga a cada vendedor</small></div></button>
   <button data-v="cuenta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 21h18"/></svg><div>Cuenta<small>Saldo del banco</small></div></button>
   <button data-v="distribucion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg><div>Distribución<small>Reparto de la utilidad registrado</small></div></button>
@@ -299,17 +310,21 @@ function I(r){return{row:r.row,fecha:r.v[0],cliente:r.v[1],tipo:r.v[2],monto:num
 function month(m){
   var ing=rows('ingresos').map(I).filter(function(x){return ymOf(x.fecha)===m});
   var ingresos=ing.reduce(function(a,x){return a+x.monto},0),comVend=ing.reduce(function(a,x){return a+x.com},0),comOv=ing.reduce(function(a,x){return a+x.ov},0);
-  var fd=firstDay(m),ld=lastDay(m);
-  var fijosRows=rows('gastosFijos').filter(function(r){return r.v[3]==='Sí'&&(!r.v[4]||r.v[4]<=ld)&&(!r.v[5]||r.v[5]>=fd)});
-  var fijos=fijosRows.reduce(function(a,r){return a+num(r.v[2])},0);
-  var varRows=rows('gastos').filter(function(r){return ymOf(r.v[0])===m});
+  // Gastos = lo que se pagó (pestaña Gastos). Los pagos de gastos fijos llevan "Gasto fijo" en Notas.
+  var gRows=rows('gastos').filter(function(r){return ymOf(r.v[0])===m});
+  var fijosRows=gRows.filter(esPagoFijo),varRows=gRows.filter(function(r){return !esPagoFijo(r)});
+  var fijos=fijosRows.reduce(function(a,r){return a+num(r.v[3])},0);
   var variables=varRows.reduce(function(a,r){return a+num(r.v[3])},0);
   var gastos=fijos+variables,comisiones=comVend+comOv,utilidad=ingresos-comisiones-gastos;
-  var cats={};fijosRows.forEach(function(r){var c=(r.v[1]||'Sin categoría')+' (fijo)';cats[c]=(cats[c]||0)+num(r.v[2])});
-  varRows.forEach(function(r){var c=r.v[2]||'Sin categoría';cats[c]=(cats[c]||0)+num(r.v[3])});
+  var cats={};gRows.forEach(function(r){var c=r.v[2]||'Sin categoría';cats[c]=(cats[c]||0)+num(r.v[3])});
   var porTipo={};ing.forEach(function(x){var t=x.tipo||'Otro';porTipo[t]=(porTipo[t]||0)+x.monto});
   return{m:m,ing:ing,ingresos:ingresos,comVend:comVend,comOv:comOv,comisiones:comisiones,fijos:fijos,variables:variables,gastos:gastos,utilidad:utilidad,margen:ingresos?utilidad/ingresos:NaN,cats:cats,porTipo:porTipo};
 }
+var FIJO_TAG='Gasto fijo';
+function esPagoFijo(r){return String(r.v[4]||'').indexOf(FIJO_TAG)===0}
+function vigenteEn(v,m){return v[3]==='Sí'&&(!v[4]||ymOf(v[4])<=m)&&(!v[5]||ymOf(v[5])>=m)}
+/* Lo que se espera pagar de gastos fijos en el mes m (para el punto de equilibrio y "falta pagar"). */
+function fijosEsperados(m){return rows('gastosFijos').filter(function(r){return vigenteEn(r.v,m)}).reduce(function(a,r){return a+num(r.v[2])},0)}
 function saldo(){var last={};rows('cuenta').forEach(function(r){var c=r.v[1]||'Cuenta';if(!last[c]||r.v[0]>=last[c].f)last[c]={f:r.v[0],s:num(r.v[2])}});
   var tot=0,f='';Object.keys(last).forEach(function(c){tot+=last[c].s;if(last[c].f>f)f=last[c].f});return{total:tot,fecha:f,has:Object.keys(last).length>0}}
 function lastBill(c){var l=null;rows('ingresos').map(I).forEach(function(x){if(x.cliente===c&&x.tipo==='Mensualidad'&&(!l||x.fecha>=l.fecha))l=x});return l?l.monto:0}
@@ -318,8 +333,7 @@ function clientesInfo(){var cl=rows('clientes'),act=cl.filter(function(r){return
   var calif=act.filter(function(r){return(r.v[5]==='Socio comercial'||r.v[5]==='Vendedor')&&(pagos[r.v[0]]||0)>=3}).length;
   return{total:cl.length,activos:act.length,prueba:cl.filter(function(r){return r.v[3]==='Prueba'}).length,mrr:mrr,calif:calif}}
 function distribucionReg(m){var o={};rows('distribucion').forEach(function(r){if(ymOf(r.v[1])===m)o[r.v[2]]=(o[r.v[2]]||0)+num(r.v[3])});return o}
-function firstYM(){var ms=[];rows('ingresos').forEach(function(r){ms.push(ymOf(r.v[0]))});rows('gastos').forEach(function(r){ms.push(ymOf(r.v[0]))});
-  rows('gastosFijos').forEach(function(r){if(r.v[3]==='Sí')ms.push(ymOf(r.v[4]))});ms=ms.filter(Boolean);var now=ym(new Date());
+function firstYM(){var ms=[];rows('ingresos').forEach(function(r){ms.push(ymOf(r.v[0]))});rows('gastos').forEach(function(r){ms.push(ymOf(r.v[0]))});ms=ms.filter(Boolean);var now=ym(new Date());
   return ms.length?ms.reduce(function(a,b){return a<b?a:b}):now}
 /* Meses del período. Año y Todo llegan hasta el mes actual para no contar gastos fijos de meses que no pasaron. */
 function perMonths(){if(PER==='mes')return[SEL];var now=ym(new Date()),start,end=now;
@@ -353,19 +367,21 @@ function navState(){document.querySelectorAll('#bnav button').forEach(function(b
 /* En el celular las tablas .rt se ven como tarjetas: cada celda lleva el nombre de su columna. */
 function labelTables(root){root.querySelectorAll('table.rt').forEach(function(t){var hs=[].map.call(t.rows[0].cells,function(c){return c.textContent.replace(/ [↑↓]$/,'')});
   [].slice.call(t.rows,1).forEach(function(r){[].forEach.call(r.cells,function(c,j){c.setAttribute('data-label',hs[j]||'')})})})}
-document.getElementById('prevM').onclick=function(){SEL=addM(SEL,PER==='anio'?-12:-1);render()};
-document.getElementById('nextM').onclick=function(){SEL=addM(SEL,PER==='anio'?12:1);render()};
+document.getElementById('prevM').onclick=function(){SEL=addM(SEL,perView()&&PER==='anio'?-12:-1);render()};
+document.getElementById('nextM').onclick=function(){SEL=addM(SEL,perView()&&PER==='anio'?12:1);render()};
 document.addEventListener('click',function(e){var b=e.target.closest('.seg button');if(!b)return;PER=b.dataset.per;try{localStorage.setItem('abita_periodo',PER)}catch(x){}render()});
 document.getElementById('refresh').onclick=function(){load()};
 
 function render(){
-  document.getElementById('mLabel').textContent=PER==='todo'?'Todo el historial':(PER==='anio'?'Año '+SEL.slice(0,4):cap(mName(SEL)));
-  document.getElementById('prevM').classList.toggle('hide',PER==='todo');document.getElementById('nextM').classList.toggle('hide',PER==='todo');navState();saveBar();
+  var pm=perView()?PER:'mes';
+  document.getElementById('mLabel').textContent=pm==='todo'?'Todo el historial':(pm==='anio'?'Año '+SEL.slice(0,4):cap(mName(SEL)));
+  document.getElementById('prevM').classList.toggle('hide',pm==='todo');document.getElementById('nextM').classList.toggle('hide',pm==='todo');navState();saveBar();
   Object.keys(charts).forEach(function(k){charts[k].destroy()});charts={};
   if(!D)return;
   if(VIEW==='resumen')return renderResumen();
   if(VIEW==='comisiones')return renderComisiones();
   if(VIEW==='config')return renderConfig();
+  if(VIEW==='gastosFijos')return renderFijos();
   return renderTable(VIEW);
 }
 function segHTML(){return '<div class="seg" role="group" aria-label="Período">'+[['mes','Mes'],['anio','Año'],['todo','Todo']].map(function(x){return '<button type="button" data-per="'+x[0]+'" class="'+(PER===x[0]?'on':'')+'">'+x[1]+'</button>'}).join('')+'</div>'}
@@ -375,7 +391,7 @@ function g(l,v,s,cls){return '<div class="gcard '+(cls||'')+'"><div class="l">'+
 /* ============ Resumen ============ */
 function renderResumen(){
   var M=period(),P=month(addM(SEL,-1)),S=saldo(),C=clientesInfo(),n=M.months.length||1,mes=PER==='mes';
-  var fijosMes=month(mes?SEL:ym(new Date())).fijos;
+  var fijosMes=fijosEsperados(mes?SEL:ym(new Date()));
   var avgFee=C.activos?C.mrr/C.activos:(num(CFG.precio_starter)||50),cubrir=avgFee>0?Math.ceil(fijosMes/avgFee):0;
   var delta=mes&&P.ingresos?(M.ingresos-P.ingresos)/P.ingresos:NaN,gana=M.utilidad>=0,vacio=M.ingresos===0&&M.gastos===0;
   var title=vacio?'Todavía no hay movimientos '+(mes?'este mes':(PER==='anio'?'en '+SEL.slice(0,4):''))+'<span class="dot">.</span>':
@@ -412,7 +428,7 @@ function renderResumen(){
 function statementHTML(M){var r=function(l,v,cls){return '<tr><td>'+l+'</td><td class="num '+(cls||'')+'">'+v+'</td></tr>'};
   return '<div class="kicker">Estado de resultados · '+esc(perLabel())+'</div><h2>De dónde sale la utilidad</h2><table class="statement">'+
     r('<b>Ingresos</b>','<b>'+$m(M.ingresos)+'</b>')+Object.keys(M.porTipo).map(function(t){return r('<span class="muted">· '+esc(t)+'</span>','<span class="muted">'+$m(M.porTipo[t])+'</span>')}).join('')+
-    r('− Comisiones a vendedores',$m(-M.comVend),'neg')+r('− Override del socio comercial',$m(-M.comOv),'neg')+r('− Gastos fijos',$m(-M.fijos),'neg')+r('− Gastos variables',$m(-M.variables),'neg')+
+    r('− Comisiones a vendedores',$m(-M.comVend),'neg')+r('− Override del socio comercial',$m(-M.comOv),'neg')+r('− Gastos fijos pagados',$m(-M.fijos),'neg')+r('− Gastos variables',$m(-M.variables),'neg')+
     r('<b>= Utilidad de Abita</b>','<b class="'+(M.utilidad>=0?'pos':'neg')+'" style="font-size:18px">'+$m(M.utilidad)+'</b>')+'</table>'}
 var DKEYS=[['Reinversión','reparto_reinversion'],['Reserva','reparto_reserva'],['Gabriel','reparto_gabriel'],['Daniel','reparto_daniel']];
 function distribucionHTML(M){var base=M.repartible,reg={};rows('distribucion').forEach(function(r){if(inPer(r.v[1]))reg[r.v[2]]=(reg[r.v[2]]||0)+num(r.v[3])});
@@ -476,9 +492,9 @@ function accountNames(){var s={};rows('cuenta').forEach(function(r){if(r.v[1])s[
 var DEF={
   ingresos:{eb:'Lo que entra',title:'Ingresos',sub:'Cada pago que entra: mensualidades, instalaciones u otros. Las comisiones se calculan solas.',dateIdx:0,amountIdx:3,
     fields:[{l:'Fecha',t:'date'},{l:'Cliente',t:'choice',src:clientNames},{l:'Tipo',t:'choice',src:L('lista_tipos_ingreso')},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],show:[0,1,2,3,6,8,9],extra:{5:'Mes #',6:'Vendido por',7:'Rol',8:'Comisión',9:'Override'},money:[3,8,9]},
-  gastos:{eb:'Lo que sale',title:'Gastos variables',sub:'Créditos de IA, compras puntuales y todo lo que no se paga cada mes.',dateIdx:0,amountIdx:3,
+  gastos:{eb:'Lo que sale',title:'Gastos',sub:'Todo lo que se pagó: los gastos fijos marcados como pagados y las compras puntuales, como créditos de IA.',dateIdx:0,amountIdx:3,
     fields:[{l:'Fecha',t:'date'},{l:'Concepto',t:'choice',src:conceptNames},{l:'Categoría',t:'choice',src:L('lista_categorias')},{l:'Monto (USD)',t:'number'},{l:'Notas',t:'text'}],money:[3]},
-  gastosFijos:{eb:'Todos los meses',title:'Gastos fijos',sub:'Se cuentan solos en cada mes mientras estén activos.',amountIdx:2,
+  gastosFijos:{eb:'Todos los meses',title:'Gastos fijos',sub:'Lo que se paga cada mes. No suma solo: cuando lo paguen, tocá «Pagado» y queda anotado en Gastos.',amountIdx:2,
     fields:[{l:'Concepto',t:'choice',src:conceptNames},{l:'Categoría',t:'choice',src:L('lista_categorias')},{l:'Monto mensual (USD)',t:'number'},{l:'Activo',t:'select',o:['Sí','No']},{l:'Desde',t:'date'},{l:'Hasta (opcional)',t:'date'},{l:'Notas',t:'text'}],money:[2]},
   clientes:{eb:'Cartera',title:'Clientes',sub:'Plan, estado y quién lo vendió. De esto dependen las comisiones.',
     fields:[{l:'Cliente',t:'text'},{l:'Plan',t:'choice',src:L('lista_planes')},{l:'Fecha inicio',t:'date'},{l:'Estado',t:'choice',src:L('lista_estados')},{l:'Vendido por',t:'choice',src:sellerNames},{l:'Rol del vendedor',t:'choice',src:L('lista_roles')},{l:'Mensualidad (USD) · vacío si paga por mensaje',t:'number'},{l:'Notas',t:'text'}],money:[6]},
@@ -516,6 +532,36 @@ function renderTable(key){
   v.querySelectorAll('tr[data-row]').forEach(function(tr){tr.onclick=function(){openForm(key,Number(tr.dataset.row))}});
 }
 
+/* ============ Gastos fijos del mes ============ */
+function renderFijos(){
+  var m=SEL,now=ym(new Date()),pag={};
+  rows('gastos').forEach(function(r){if(ymOf(r.v[0])===m&&esPagoFijo(r))pag[r.v[1]]=r});
+  var all=rows('gastosFijos'),act=all.filter(function(r){return vigenteEn(r.v,m)}),off=all.filter(function(r){return !vigenteEn(r.v,m)});
+  var hechos=act.filter(function(r){return pag[r.v[0]]}),pend=act.filter(function(r){return !pag[r.v[0]]});
+  var totPag=hechos.reduce(function(a,r){return a+num(pag[r.v[0]].v[3])},0),falta=pend.reduce(function(a,r){return a+num(r.v[2])},0);
+  setHero('Todos los meses · '+mName(m),'Gastos fijos<span class="dot">.</span>',DEF.gastosFijos.sub,'<div class="glass-grid">'+
+    g('Pagado',$m(totPag),hechos.length+' de '+act.length+' en '+mName(m,true),'hot')+g('Falta pagar',$m(falta),pend.length?pend.length+' pendiente'+(pend.length===1?'':'s'):'Todo al día')+
+    g('Total del mes',$m(fijosEsperados(m)),'Suma de los gastos fijos activos')+'</div>');
+  var item=function(r,status){var v=r.v,pg=pag[v[0]];
+    return '<div class="fx-item'+(status?' off':'')+'" data-row="'+r.row+'"><div class="fx-main"><b>'+esc(v[0])+'</b><span class="muted">'+esc(v[1]||'Sin categoría')+(v[6]?' · '+esc(v[6]):'')+'</span></div>'+
+      '<span class="fx-amt">'+$m(v[2])+'<span class="muted" style="font-weight:600"> /mes</span></span><div class="fx-act">'+
+      (status?'<span class="chip">'+esc(status)+'</span>':(pg?'<span class="chip g" data-gasto="'+pg.row+'" title="Ver el pago">✓ Pagado '+esc(pg.v[0].slice(8,10)+'/'+pg.v[0].slice(5,7))+(num(pg.v[3])!==num(v[2])?' · '+$m(pg.v[3]):'')+'</span>':
+        '<button type="button" class="btn sm" data-pagar="'+r.row+'">Pagado</button>'))+'</div></div>'};
+  var h='<div class="card"><div class="toolbar"><div class="sub" style="flex:1">'+(act.length?'Tocá «Pagado» cuando paguen cada uno. Se anota en Gastos con la fecha de hoy y podés ajustar el monto.':'Todavía no hay gastos fijos.')+'</div><button class="btn" id="addBtn" aria-label="Agregar">+ Agregar</button></div>';
+  h+=pend.map(function(r){return item(r)}).join('')+hechos.map(function(r){return item(r)}).join('');
+  if(!act.length&&!off.length)h+='<div class="empty">Agregá los gastos que se pagan cada mes: servidor, base de datos, software…</div>';
+  if(off.length)h+='<div class="fx-sec">No se pagan en '+esc(mName(m))+'</div>'+off.map(function(r){var v=r.v;
+    return item(r,v[3]!=='Sí'?'Desactivado':(v[4]&&ymOf(v[4])>m?'Empieza '+mName(ymOf(v[4]),true):'Terminó '+mName(ymOf(v[5]),true)))}).join('');
+  var V=document.getElementById('view');V.innerHTML=h+'</div>';
+  document.getElementById('addBtn').onclick=function(){openForm('gastosFijos',null)};
+  V.querySelectorAll('.fx-item').forEach(function(el){el.onclick=function(e){
+    var pb=e.target.closest('[data-pagar]'),gb=e.target.closest('[data-gasto]');
+    if(pb){var v=rows('gastosFijos').filter(function(r){return r.row===Number(pb.dataset.pagar)})[0].v;
+      var f=m===now?today():(m<now?lastDay(m):firstDay(m));openForm('gastos',null,[f,v[0],v[1],v[2],FIJO_TAG]);return}
+    if(gb){openForm('gastos',Number(gb.dataset.gasto));return}
+    openForm('gastosFijos',Number(el.dataset.row))}});
+}
+
 /* ============ Formulario ============ */
 function defaults(key){var t=today();
   if(key==='ingresos')return[t,'','Mensualidad','',''];if(key==='gastos')return[t,'',opts('lista_categorias')[0],'',''];
@@ -524,9 +570,9 @@ function defaults(key){var t=today();
   if(key==='cuenta'){var a=accountNames();return[t,a[0]||'Cuenta principal','',''];}
   if(key==='distribucion')return[t,firstDay(SEL),'Reinversión','',''];return[]}
 function planPrice(plan,kind){return num(CFG[(kind==='inst'?'instalacion_':'precio_')+slug(plan)])}
-function openForm(key,row){
-  var def=DEF[key],rec=row?rows(key).filter(function(r){return r.row===row})[0]:null,vals=rec?rec.v.slice(0,def.fields.length):defaults(key);
-  var h='<h3>'+(rec?'Editar':'Agregar')+' · '+def.title+'</h3><form id="frm">';
+function openForm(key,row,pre){
+  var def=DEF[key],rec=row?rows(key).filter(function(r){return r.row===row})[0]:null,vals=rec?rec.v.slice(0,def.fields.length):(pre||defaults(key));
+  var h='<h3>'+(pre?'Registrar pago · '+esc(pre[1]):(rec?'Editar':'Agregar')+' · '+def.title)+'</h3><form id="frm">';
   def.fields.forEach(function(f,i){var val=vals[i]==null?'':vals[i];h+='<div class="field"><label>'+f.l+'</label>';
     if(f.t==='select')h+='<select name="f'+i+'">'+f.o.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>'}).join('')+'</select>';
     else if(f.t==='choice'){var o=f.src().filter(function(x,j,a){return x!==''&&a.indexOf(x)===j});if(val!==''&&o.indexOf(String(val))<0)o.push(String(val));
@@ -555,7 +601,7 @@ function openForm(key,row){
   document.getElementById('cancel').onclick=closeForm;
   if(rec)document.getElementById('del').onclick=function(){if(!confirm('¿Eliminar este registro del Sheet?'))return;busy(true);call('deleteRow',key,row).then(function(d){setData(d);closeForm();toast('Eliminado')}).catch(err).finally(function(){busy(false)})};
   F.onsubmit=function(e){e.preventDefault();var out=def.fields.map(function(f,i){return F['f'+i].value});if(!out[0]){toast('Completá el primer campo');return}
-    busy(true);call('saveRow',key,row,out).then(function(d){setData(d);closeForm();toast('Guardado en el Sheet')}).catch(err).finally(function(){busy(false)})};
+    busy(true);call('saveRow',key,row,out).then(function(d){setData(d);closeForm();toast(pre?'Pago anotado en Gastos':'Guardado en el Sheet')}).catch(err).finally(function(){busy(false)})};
 }
 function closeForm(){document.getElementById('mbg').classList.remove('on')}
 document.getElementById('mbg').addEventListener('click',function(e){if(e.target.id==='mbg')closeForm()});
