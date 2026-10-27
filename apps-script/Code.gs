@@ -95,7 +95,7 @@ function openDashboard() {
   SpreadsheetApp.getUi().showModalDialog(html, 'Abita · Finanzas');
 }
 
-var SHEET_ID = '1ASqsCrFTzyE49MrugAbWKQgEcgF2MsMQ3u7yj0nFC70';
+var SHEET_ID = '1HcshA53qgsd_dBAWqDdbA137yRiH9MFMFrSLcRSEVUY';
 var SS_ = null;
 function ss_() {
   // Funciona tanto si el script está dentro del Sheet como si se creó aparte en script.google.com.

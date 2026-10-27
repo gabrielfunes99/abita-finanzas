@@ -5,8 +5,9 @@ App de finanzas internas de Abita.ai (SaaS de WhatsApp + IA, El Salvador). La us
 **La base de datos es un Google Sheet.** No hay otro backend.
 
 - Sheet: `Abita · Finanzas (base de datos)`
-- ID: `1ASqsCrFTzyE49MrugAbWKQgEcgF2MsMQ3u7yj0nFC70`
-- URL: https://docs.google.com/spreadsheets/d/1ASqsCrFTzyE49MrugAbWKQgEcgF2MsMQ3u7yj0nFC70/edit
+- ID: `1HcshA53qgsd_dBAWqDdbA137yRiH9MFMFrSLcRSEVUY` (cuenta `gabrielfunes99@gmail.com`, creado con `crearSheet`)
+- URL: https://docs.google.com/spreadsheets/d/1HcshA53qgsd_dBAWqDdbA137yRiH9MFMFrSLcRSEVUY/edit
+- El Sheet viejo de `g.funes@ogc.sv` (`1ASqsCrFTzyE49MrugAbWKQgEcgF2MsMQ3u7yj0nFC70`) ya no se usa. `src/adapters/cowork.js` todavía apunta a él.
 - Locale en_US (las fórmulas usan coma), zona horaria America/El_Salvador, moneda USD.
 
 ## Estructura del repo
@@ -85,7 +86,7 @@ npm test               # prueba con Sheet simulado; capturas en tests/out/
 
 ## PWA (Cloudflare + Firebase Auth + API de Apps Script)
 
-**Dónde vive cada cosa:** el Sheet es de `g.funes@ogc.sv`. La API es un Apps Script **standalone** de `gabrielfunes99@gmail.com` ("Abita · Finanzas (API)", scriptId `1adfHLb5GSj_LcStlUdt_-KBv3UoKGkOTDjSrcacy_Bo2W7bmEw4Z67Wf`) que abre el Sheet por `SHEET_ID`, así que ese Gmail necesita ser Editor del Sheet. Firebase: proyecto `abita-finanzas` del mismo Gmail. Para publicar cambios del backend: `npm run push` y `npx.cmd clasp deploy -i <deploymentId>` para mantener la misma URL `/exec`.
+**Dónde vive cada cosa:** todo en `gabrielfunes99@gmail.com`. La API es un Apps Script **standalone** ("Abita · Finanzas (API)", scriptId `1adfHLb5GSj_LcStlUdt_-KBv3UoKGkOTDjSrcacy_Bo2W7bmEw4Z67Wf`) que abre el Sheet por `SHEET_ID` (o la propiedad del script `SHEET_ID`, que tiene prioridad). Firebase: proyecto `abita-finanzas` del mismo Gmail. Para publicar cambios del backend: `npm run push` y `npx.cmd clasp deploy -i <deploymentId>` para mantener la misma URL `/exec`.
 
 La app que usan Gabriel y Daniel es la PWA en `docs/`. Cloudflare (Worker `abita-finanzas`, https://abita-finanzas.gabrielfunes99.workers.dev/) la despliega solo con cada push a `main` del repo `gabrielfunes99/abita-finanzas` (`wrangler.jsonc` apunta a `docs/`). GitHub Pages también la sirve en https://gabrielfunes99.github.io/abita-finanzas/. Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
 
