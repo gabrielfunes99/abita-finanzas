@@ -14,34 +14,32 @@ var TABLES = {
 };
 
 /**
- * La app web corre como el dueño y acepta visitas anónimas: es la API de la PWA (GitHub Pages).
+ * La app web corre como el dueño y acepta visitas anónimas: es la API de la PWA (Cloudflare).
  * IMPORTANTE: doGet nunca debe devolver HtmlService. Una página HtmlService servida acá dejaría
- * llamar getData/saveRow por google.script.run sin login. Todo acceso pasa por doPost + sesión.
+ * llamar getData/saveRow por google.script.run sin login. Todo acceso pasa por doPost + token.
  */
-var PWA_URL = 'https://gabrielfunes99.github.io/abita-finanzas/';
+var PWA_URL = 'https://abita-finanzas.pages.dev/';
+// Firebase (Configuración del proyecto > General > Tus apps). No son secretos.
+var FIREBASE_API_KEY = 'PEGAR_AQUI';
+var FIREBASE_PROJECT_ID = 'PEGAR_AQUI';
+
 function doGet() {
   return ContentService.createTextOutput('Abita · Finanzas: esta URL es la API. Abrí la app en ' + PWA_URL);
 }
 
 /**
  * API de la PWA. Body (text/plain para evitar preflight CORS): { fn, args, token }.
- * Responde { ok: true, data } o { ok: false, error, auth }.
- * Login: login(email) abre una sesión si el correo está en emails_permitidos.
+ * token = ID token de Firebase Auth (login con Google). Responde { ok: true, data } o { ok: false, error, auth }.
  */
 var API_ = { getData: getData, saveRow: saveRow, deleteRow: deleteRow, saveConfig: saveConfig };
-var SESSION_DAYS = 90;
 function doPost(e) {
   var body;
   try {
-    var req = JSON.parse(e.postData.contents), args = req.args || [];
-    if (req.fn === 'login') body = JSON.stringify({ ok: true, data: login_(args[0]) });
-    else if (req.fn === 'logout') { endSession_(req.token); body = '{"ok":true,"data":null}'; }
-    else {
-      checkSession_(req.token);
-      var fn = API_[req.fn];
-      if (!fn) throw new Error('Función desconocida: ' + req.fn);
-      body = '{"ok":true,"data":' + fn.apply(null, args) + '}';
-    }
+    var req = JSON.parse(e.postData.contents);
+    verifyUser_(req.token);
+    var fn = API_[req.fn];
+    if (!fn) throw new Error('Función desconocida: ' + req.fn);
+    body = '{"ok":true,"data":' + fn.apply(null, req.args || []) + '}';
   } catch (err) {
     body = JSON.stringify({ ok: false, error: String(err && err.message || err), auth: !!(err && err.auth) });
   }
@@ -50,7 +48,6 @@ function doPost(e) {
 
 function authError_(msg) { var e = new Error(msg); e.auth = true; return e; }
 function hash_(s) { return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s)).replace(/=+$/, ''); }
-function normEmail_(s) { return String(s || '').trim().toLowerCase(); }
 
 /** Correos con acceso: fila "emails_permitidos" de la pestaña Config, separados por coma. */
 function allowedEmails_() {
@@ -62,30 +59,29 @@ function allowedEmails_() {
   return [];
 }
 
-/** Abre una sesión de SESSION_DAYS días si el correo está permitido. */
-function login_(email) {
-  email = normEmail_(email);
-  if (allowedEmails_().indexOf(email) < 0) throw new Error('Este correo no tiene acceso');
-  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-  var exp = Date.now() + SESSION_DAYS * 864e5, props = PropertiesService.getScriptProperties();
-  var all = props.getProperties(), now = Date.now();
-  Object.keys(all).forEach(function (k) {  // limpia sesiones vencidas
-    if (k.indexOf('ses_') === 0) { try { if (JSON.parse(all[k]).exp < now) props.deleteProperty(k); } catch (e) { props.deleteProperty(k); } }
-  });
-  props.setProperty('ses_' + hash_(token), JSON.stringify({ email: email, exp: exp }));
-  return { token: token, email: email, exp: exp };
-}
-
-/** Valida la sesión y que el correo siga en emails_permitidos (sacarlo de Config corta el acceso). */
-function checkSession_(token) {
+/**
+ * Verifica el ID token con Firebase (accounts:lookup rechaza tokens vencidos o falsos)
+ * y que el correo esté en emails_permitidos. El resultado se cachea mientras el token es válido.
+ */
+function verifyUser_(token) {
   if (!token) throw authError_('Iniciá sesión para continuar');
-  var props = PropertiesService.getScriptProperties(), key = 'ses_' + hash_(token), raw = props.getProperty(key);
-  var s = raw ? JSON.parse(raw) : null;
-  if (!s || s.exp < Date.now()) { if (raw) props.deleteProperty(key); throw authError_('La sesión venció. Entrá de nuevo.'); }
-  if (allowedEmails_().indexOf(s.email) < 0) { props.deleteProperty(key); throw authError_(s.email + ' ya no tiene acceso'); }
-  return s.email;
+  var cache = CacheService.getScriptCache(), key = 'fb_' + hash_(token), email = cache.get(key);
+  if (!email) {
+    var claims = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(token.split('.')[1] + '==='.slice((token.split('.')[1].length + 3) % 4))).getDataAsString());
+    if (claims.aud !== FIREBASE_PROJECT_ID) throw authError_('Sesión de otro proyecto');
+    var res = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + FIREBASE_API_KEY, {
+      method: 'post', contentType: 'application/json', payload: JSON.stringify({ idToken: token }), muteHttpExceptions: true
+    });
+    if (res.getResponseCode() !== 200) throw authError_('La sesión venció. Entrá de nuevo.');
+    var u = (JSON.parse(res.getContentText()).users || [])[0];
+    if (!u || !u.email || !u.emailVerified) throw authError_('No se pudo verificar el correo');
+    email = String(u.email).toLowerCase();
+    var ttl = Math.min(21600, Number(claims.exp) - Math.floor(Date.now() / 1000));
+    if (ttl > 0) cache.put(key, email, ttl);
+  }
+  if (allowedEmails_().indexOf(email) < 0) throw authError_(email + ' no tiene acceso a Abita · Finanzas');
+  return email;
 }
-function endSession_(token) { if (token) PropertiesService.getScriptProperties().deleteProperty('ses_' + hash_(token)); }
 
 /** Lock del Sheet si el script está dentro del Sheet; si no, lock del script. */
 function lock_() { return LockService.getDocumentLock() || LockService.getScriptLock(); }

@@ -13,16 +13,17 @@ App de finanzas internas de Abita.ai (SaaS de WhatsApp + IA, El Salvador). La us
 
 ```
 src/ui.html                 Fuente única de la interfaz (HTML + CSS + JS, sin framework)
-src/adapters/pwa.js         call() vía fetch a la API de Apps Script + login por correo permitido -> PWA
+src/adapters/pwa.js         call() vía fetch a la API de Apps Script + login de Google con Firebase Auth -> PWA
 src/adapters/gas.js         call() vía google.script.run  -> diálogo dentro del Sheet
 src/adapters/cowork.js      call() vía window.cowork.callMcpTool (conector Google Sheets) -> artifact de Claude Cowork
-src/pwa/                    head.html (metas, manifest, estilos del login), config.js, manifest, sw.js, icons/
+src/pwa/                    head.html (metas, manifest, Firebase SDK, estilos del login), config.js, manifest, sw.js, icons/
+wrangler.jsonc              Cloudflare: sirve docs/ como archivos estáticos
 tools/icons.py              Regenera src/pwa/icons/ desde la "A" del logo (Pillow)
 build.py                    Inyecta adaptador + head en ui.html y genera las tres salidas
 apps-script/Code.gs         Backend Apps Script: doGet, doPost (API), getData, saveRow, deleteRow, saveConfig
 apps-script/Index.html      GENERADO por build.py (no editar a mano)
-apps-script/appsscript.json Manifest (web app: ejecutar como yo, acceso anónimo; la API valida la sesión)
-docs/                       GENERADO por build.py: la PWA que publica GitHub Pages
+apps-script/appsscript.json Manifest (web app: ejecutar como yo, acceso anónimo; la API valida el token)
+docs/                       GENERADO por build.py: la PWA que publica Cloudflare
 dist/cowork-dashboard.html  GENERADO por build.py (artifact "abita-finanzas" en Cowork)
 tests/test_dash.js          Prueba con Puppeteer y un Sheet simulado que replica las fórmulas
 ```
@@ -82,22 +83,25 @@ python build.py        # genera apps-script/Index.html y dist/cowork-dashboard.h
 npm test               # prueba con Sheet simulado; capturas en tests/out/
 ```
 
-## PWA (GitHub Pages + API de Apps Script)
+## PWA (Cloudflare + Firebase Auth + API de Apps Script)
 
-La app que usan Gabriel y Daniel es la PWA en `docs/`, publicada con GitHub Pages: https://gabrielfunes99.github.io/abita-finanzas/ (repo `gabrielfunes99/abita-finanzas`, rama main, carpeta `/docs`). Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
+La app que usan Gabriel y Daniel es la PWA en `docs/`. Cloudflare la despliega solo con cada push a `main` del repo `gabrielfunes99/abita-finanzas` (`wrangler.jsonc` apunta a `docs/`). GitHub Pages también la sirve en https://gabrielfunes99.github.io/abita-finanzas/. Se instala desde el navegador ("Agregar a pantalla de inicio" en iPhone, "Instalar app" en Android/Chrome).
 
-- La PWA hace `POST` (Content-Type `text/plain`, para evitar el preflight CORS) a la URL `/exec` de Apps Script con `{ fn, args, token }`.
-- **Login solo con correo:** `login(email)` abre una sesión de 90 días si el correo está en `emails_permitidos`. La sesión se guarda en Propiedades del script (`ses_<hash>`) y en el `localStorage` del teléfono; `logout` la borra. No se verifica que la persona sea dueña del correo (decisión de Gabriel): quien conozca un correo permitido puede entrar.
+- **Login:** Firebase Auth con Google (`signInWithPopup`). Firebase guarda la sesión en el teléfono y renueva el token solo.
+- La PWA hace `POST` (Content-Type `text/plain`, para evitar el preflight CORS) a la URL `/exec` de Apps Script con `{ fn, args, token }`, donde `token` es el ID token de Firebase.
+- `verifyUser_` en Code.gs revisa que el token sea del proyecto (`aud` = `FIREBASE_PROJECT_ID`), lo valida con `identitytoolkit.googleapis.com/v1/accounts:lookup` y cachea el correo mientras el token es válido.
 - **Quién entra:** fila `emails_permitidos` de la pestaña Config (correos separados por coma). Está en el Sheet y no en el código porque el repo es público. Sacar un correo de ahí corta su acceso en la siguiente llamada.
 - La app web corre **como el dueño con acceso anónimo**. Por eso `doGet` devuelve solo texto (ContentService): **nunca debe devolver HtmlService**, porque una página así expone `google.script.run` sin login.
-- `src/pwa/config.js` lleva solo `apiUrl` (no es secreta).
+- `src/pwa/config.js` lleva `apiUrl` y el `firebaseConfig`; Code.gs lleva `FIREBASE_API_KEY` y `FIREBASE_PROJECT_ID`. Ninguno es secreto.
 - El service worker (`sw.js`) guarda la interfaz para que abra sin red; los datos siempre se piden en vivo. `build.py` le pone un hash de versión en cada build.
 
 ### Puesta en marcha (una sola vez)
 
-1. Agregar al final de Config la fila `emails_permitidos` con los correos.
-2. Apps Script: `npm run push`, luego Implementar → Gestionar implementaciones → editar → Nueva versión (o Nueva implementación → App web si no hay ninguna). 
-3. Pegar la URL `/exec` en `src/pwa/config.js`, correr `python build.py`, commit y push.
+1. Firebase → Authentication → Settings → Dominios autorizados: agregar el dominio de Cloudflare (y `gabrielfunes99.github.io` si se usa).
+2. Pegar el `firebaseConfig` en `src/pwa/config.js` y `FIREBASE_API_KEY` / `FIREBASE_PROJECT_ID` / `PWA_URL` en Code.gs.
+3. Agregar al final de Config la fila `emails_permitidos` con los correos.
+4. Apps Script: `npm run push`, luego Implementar → Gestionar implementaciones → editar → Nueva versión. Al autorizar pide "conectarse a un servicio externo" (UrlFetchApp).
+5. Pegar la URL `/exec` en `src/pwa/config.js`, correr `python build.py`, commit y push.
 
 ### Publicar en Apps Script con clasp
 
@@ -106,7 +110,7 @@ La app que usan Gabriel y Daniel es la PWA en `docs/`, publicada con GitHub Page
 3. `npm run push` (build + clasp push).
 4. En el editor de Apps Script: Implementar → Gestionar implementaciones → editar → Nueva versión. La URL de la app se mantiene.
 
-Para dar acceso a alguien: agregar su correo a `emails_permitidos` en Config y mandarle la URL de GitHub Pages. No hace falta compartirle el Sheet.
+Para dar acceso a alguien: agregar su correo (de Google) a `emails_permitidos` en Config y mandarle la URL de la app. No hace falta compartirle el Sheet.
 
 ## Pendientes / ideas
 

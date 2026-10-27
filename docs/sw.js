@@ -1,7 +1,7 @@
 /* Service worker: la app abre sin red (los datos siempre se piden en vivo a Apps Script). */
-var V = 'abita-1c5dc8271d';
+var V = 'abita-f0a3bcd923';
 var SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
-var CDN = /^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
+var CDN = /^https:\/\/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com|www\.gstatic\.com\/firebasejs)\//;
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
@@ -21,7 +21,7 @@ self.addEventListener('fetch', function (e) {
     }).catch(function () { return caches.match(r, { ignoreSearch: true }); }));
     return;
   }
-  // Chart.js y fuentes: copia guardada, si no, red.
+  // Chart.js, Firebase y fuentes: copia guardada, si no, red.
   if (CDN.test(r.url)) {
     e.respondWith(caches.match(r).then(function (hit) {
       return hit || fetch(r).then(function (res) { var copy = res.clone(); caches.open(V).then(function (c) { c.put(r, copy); }); return res; });

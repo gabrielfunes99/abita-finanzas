@@ -1,0 +1,6 @@
+// Cloudflare Workers: sirve la PWA (carpeta docs/, generada por build.py) como archivos estáticos.
+{
+  "name": "abita-finanzas",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./docs" }
+}
