@@ -99,22 +99,108 @@ var SHEET_ID = '1ASqsCrFTzyE49MrugAbWKQgEcgF2MsMQ3u7yj0nFC70';
 var SS_ = null;
 function ss_() {
   // Funciona tanto si el script está dentro del Sheet como si se creó aparte en script.google.com.
-  // La propiedad SHEET_ID (la deja migrarSheet) tiene prioridad sobre la constante.
+  // La propiedad SHEET_ID (la deja crearSheet) tiene prioridad sobre la constante.
   return SS_ = SS_ || SpreadsheetApp.getActiveSpreadsheet() ||
     SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('SHEET_ID') || SHEET_ID);
 }
 
 /**
- * Ejecutar UNA vez desde el editor: copia el Sheet de SHEET_ID a la cuenta dueña del script
- * (con fórmulas y pestañas) y desde ahí la app usa la copia. Mirá el link en el registro.
+ * Ejecutar UNA vez desde el editor: crea el Sheet "Abita · Finanzas (base de datos)" en la cuenta
+ * dueña del script, con pestañas, fórmulas, Config y los datos iniciales. Desde ahí la app lo usa
+ * (queda en la propiedad SHEET_ID). Mirá el link en el registro.
  */
-function migrarSheet() {
+function crearSheet() {
   var props = PropertiesService.getScriptProperties(), id = props.getProperty('SHEET_ID');
-  if (id) { Logger.log('Ya está migrado: https://docs.google.com/spreadsheets/d/' + id + '/edit'); return; }
-  var copia = SpreadsheetApp.openById(SHEET_ID).copy('Abita · Finanzas (base de datos)');
-  props.setProperty('SHEET_ID', copia.getId());
-  Logger.log('Sheet nuevo: ' + copia.getUrl());
+  if (id) { Logger.log('Ya existe: https://docs.google.com/spreadsheets/d/' + id + '/edit'); return; }
+  var ss = SpreadsheetApp.create('Abita · Finanzas (base de datos)');
+  ss.setSpreadsheetLocale('en_US');
+  ss.setSpreadsheetTimeZone('America/El_Salvador');
+  var D = function (s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); };
+  var tab = function (name, i, headers, rows, opts) {
+    var sh = i === 0 ? ss.getSheets()[0].setName(name) : ss.insertSheet(name, i);
+    opts = opts || {};
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
+    if (rows && rows.length) sh.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+    (opts.dates || []).forEach(function (c) { sh.getRange(2, c, sh.getMaxRows() - 1, 1).setNumberFormat('yyyy-mm-dd'); });
+    (opts.money || []).forEach(function (c) { sh.getRange(2, c, sh.getMaxRows() - 1, 1).setNumberFormat('$#,##0.00'); });
+    sh.setFrozenRows(1);
+    return sh;
+  };
+
+  // Resumen: 12 meses desde octubre 2026
+  var gf = "'Gastos fijos'", res = [];
+  for (var k = 0; k < 12; k++) {
+    var r = k + 2, m = '$A' + r;
+    var mes = function (hoja, col) {
+      return 'SUMIFS(' + hoja + '!$' + col + ':$' + col + ',' + hoja + '!$A:$A,">="&' + m + ',' + hoja + '!$A:$A,"<="&EOMONTH(' + m + ',0))';
+    };
+    res.push([k === 0 ? '=DATE(2026,10,1)' : '=EDATE(A' + (r - 1) + ',1)',
+      '=' + mes('Ingresos', 'D'),
+      '=' + mes('Ingresos', 'I') + '+' + mes('Ingresos', 'J'),
+      '=SUMIFS(' + gf + '!$C:$C,' + gf + '!$D:$D,"Sí",' + gf + '!$E:$E,"<="&EOMONTH(' + m + ',0))-SUMIFS(' + gf + '!$C:$C,' + gf + '!$D:$D,"Sí",' + gf + '!$E:$E,"<="&EOMONTH(' + m + ',0),' + gf + '!$F:$F,"<"&' + m + ')',
+      '=' + mes('Gastos', 'D'),
+      '=D' + r + '+E' + r, '=B' + r + '-C' + r + '-F' + r, '=IF(B' + r + '=0,"",G' + r + '/B' + r + ')',
+      '=MAX(G' + r + ',0)*Config!$B$12', '=MAX(G' + r + ',0)*Config!$B$13', '=MAX(G' + r + ',0)*Config!$B$14', '=MAX(G' + r + ',0)*Config!$B$15']);
+  }
+  var shR = tab('Resumen', 0, ['Mes', 'Ingresos', 'Comisiones', 'Gastos fijos', 'Gastos variables', 'Gastos totales', 'Utilidad', 'Margen', 'Reinversión', 'Reserva', 'Gabriel', 'Daniel'], res);
+  shR.getRange('A2:A13').setNumberFormat('mmm yyyy');
+  shR.getRange('B2:G13').setNumberFormat('$#,##0.00');
+  shR.getRange('H2:H13').setNumberFormat('0.0%');
+  shR.getRange('I2:L13').setNumberFormat('$#,##0.00');
+
+  var shI = tab('Ingresos', 1, ['Fecha', 'Cliente', 'Tipo', 'Monto', 'Notas'], [
+    [D('2026-10-15'), 'Roofball', 'Mensualidad', 15, ''],
+    [D('2026-10-15'), 'Hera', 'Mensualidad', 69.15, '461 mensajes × $0.15']
+  ], { dates: [1], money: [4, 9, 10] });
+  shI.getRange('F1:J1').setFormulas([[
+    '=ARRAYFORMULA({"Mes # (mensualidad)";IF(C2:C<>"Mensualidad","",COUNTIFS(B2:B,B2:B,C2:C,"Mensualidad",A2:A,"<="&A2:A))})',
+    '=ARRAYFORMULA({"Vendido por";IF(B2:B="","",IFERROR(VLOOKUP(B2:B,Clientes!A2:F,5,FALSE),""))})',
+    '=ARRAYFORMULA({"Rol del vendedor";IF(B2:B="","",IFERROR(VLOOKUP(B2:B,Clientes!A2:F,6,FALSE),""))})',
+    '=ARRAYFORMULA({"Comisión vendedor";IF(B2:B="","",IF((H2:H="")+(H2:H="Fundador"),0,IF(C2:C="Instalación",D2:D*(Config!B8-IF(H2:H="Vendedor",Config!B9,0)),IF(C2:C="Mensualidad",(F2:F=2)*D2:D,0))))})',
+    '=ARRAYFORMULA({"Override socio comercial";IF(B2:B="","",IF(H2:H<>"Vendedor",0,IF(C2:C="Instalación",D2:D*Config!B9,IF(C2:C="Mensualidad",(F2:F<=Config!B11)*D2:D*Config!B10,0))))})'
+  ]]).setFontWeight('bold');
+
+  tab('Gastos fijos', 2, ['Concepto', 'Categoría', 'Monto mensual', 'Activo', 'Desde', 'Hasta', 'Notas'], [
+    ['Base de datos', 'Infraestructura', 25, 'Sí', D('2026-10-01'), '', ''],
+    ['Servidor', 'Infraestructura', 7, 'Sí', D('2026-10-01'), '', '']
+  ], { dates: [5, 6], money: [3] });
+  tab('Gastos', 3, ['Fecha', 'Concepto', 'Categoría', 'Monto', 'Notas'], [], { dates: [1], money: [4] });
+  tab('Clientes', 4, ['Cliente', 'Plan', 'Fecha inicio', 'Estado', 'Vendido por', 'Rol del vendedor', 'Mensualidad', 'Notas'], [
+    ['Roofball', 'Starter', D('2026-10-15'), 'Activo', 'Gabriel', 'Fundador', 35, ''],
+    ['Hera', 'Por mensaje', D('2026-10-15'), 'Activo', 'Gabriel', 'Fundador', '', '']
+  ], { dates: [3], money: [7] });
+  tab('Cuenta', 5, ['Fecha', 'Cuenta', 'Saldo', 'Notas'], [], { dates: [1], money: [3] });
+  tab('Distribucion', 6, ['Fecha', 'Mes', 'Destino', 'Monto', 'Notas'], [], { dates: [1, 2], money: [4] });
+
+  // Config: el ORDEN importa (Ingresos usa Config!B8:B11 y Resumen B12:B15)
+  tab('Config', 7, ['Clave', 'Valor', 'Descripción'], [
+    ['precio_lite', 35, 'Mensualidad plan Lite (USD)'],
+    ['precio_starter', 50, 'Mensualidad plan Starter (USD)'],
+    ['precio_growth', 80, 'Mensualidad plan Growth (USD)'],
+    ['instalacion_lite', 100, 'Tarifa de instalación Lite (USD)'],
+    ['instalacion_starter', 125, 'Tarifa de instalación Starter (USD)'],
+    ['instalacion_growth', 150, 'Tarifa de instalación Growth (USD)'],
+    ['pct_instalacion_vendedor', 0.6, 'Parte de la instalación para quien vende'],
+    ['pct_override_instalacion', 0.05, 'Parte de la instalación para el socio comercial cuando vende alguien de su equipo (sale de la parte del vendedor)'],
+    ['pct_override_mensual', 0.05, 'Parte de cada mensualidad para el socio comercial por clientes de su equipo'],
+    ['meses_override', 12, 'Meses que dura el override mensual'],
+    ['reparto_reinversion', 0.4, 'Reparto de la utilidad: reinversión'],
+    ['reparto_reserva', 0.2, 'Reparto de la utilidad: reserva'],
+    ['reparto_gabriel', 0.2, 'Reparto de la utilidad: Gabriel'],
+    ['reparto_daniel', 0.2, 'Reparto de la utilidad: Daniel'],
+    ['meta_tramo1_clientes', 20, 'Participación socio comercial: clientes activos del tramo 1'],
+    ['meta_tramo1_pct', 0.04, 'Participación al llegar al tramo 1'],
+    ['meta_tramo2_clientes', 50, 'Participación socio comercial: clientes activos del tramo 2'],
+    ['meta_tramo2_pct', 0.1, 'Participación al llegar al tramo 2 (tope)'],
+    ['socio_comercial_nombre', '', 'Nombre del socio comercial (para el cálculo de su override)'],
+    ['precio_por_mensaje', 0.15, "Tarifa por mensaje para clientes con plan 'Por mensaje' (USD)"],
+    ['emails_permitidos', Session.getEffectiveUser().getEmail(), 'Correos de Google que pueden entrar a la app (separados por coma)']
+  ]);
+  ss.setActiveSheet(shR);
+  props.setProperty('SHEET_ID', ss.getId());
+  Logger.log('Sheet nuevo: ' + ss.getUrl());
 }
+
 function tz_() { return ss_().getSpreadsheetTimeZone(); }
 
 function fmtCell_(v) {
